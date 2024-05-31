@@ -1,0 +1,1069 @@
+---
+- name: play
+  hosts: localhost
+#  environment:
+#    HARNESS_ACCOUNT_ID: abc123
+#    HARNESS_API_KEY: abc123
+  vars:
+    secrets: False
+    connectors: False
+    templates: False
+    pipelines: False
+    services: True
+    roles: False
+  tasks:
+#    - name: create org
+#      karcadia.harness.org:
+#        state: present
+#        id: demo_org
+
+    - name: Create project (check)
+      karcadia.harness.project:
+        state: present
+        id: demo_project
+        org: default
+        description: demo description
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_create_project
+
+    - name: debug check_create_project
+      debug:
+        var: check_create_project
+
+    - name: Create project (does not use env vars)
+      karcadia.harness.project:
+        state: present
+        id: demo_project
+        org: default
+        description: demo description
+#        account_id: abc123
+#        api_key: abc123
+        tags:
+          builtby: harness-iac
+      environment:
+      register: create_project
+
+    - name: debug create_project
+      debug:
+        var: create_project
+
+## Begin secrets
+# Account
+    - name: Create account-level secret (check)
+      karcadia.harness.secret:
+        state: present
+        id: demo_account_secret
+        tags:
+          builtby: harness-iac
+        spec:
+          secret_manager_identifier: harnessSecretManager
+          value_type: Inline
+          type: SecretText
+          value: 'secret text value'
+      check_mode: True
+      register: check_account_create_secret
+      when: secrets
+
+    - name: debug check_account_create_secret
+      debug:
+        var: check_account_create_secret
+      when: secrets
+
+    - name: Create account-level secret
+      karcadia.harness.secret:
+        state: present
+        id: demo_account_secret
+        tags:
+          builtby: harness-iac
+        spec:
+          secret_manager_identifier: harnessSecretManager
+          value_type: Inline
+          type: SecretText
+          value: 'secret text value'
+      register: create_account_secret
+      when: secrets
+
+    - name: debug create_account_secret
+      debug:
+        var: create_account_secret
+      when: secrets
+
+    - name: Delete account-level secret (check)
+      karcadia.harness.secret:
+        state: absent
+        id: demo_account_secret
+      check_mode: True
+      register: check_account_delete_secret
+      when: secrets
+
+    - name: debug check_account_delete_secret
+      debug:
+        var: check_account_delete_secret
+      when: secrets
+
+# Org        
+    - name: Create org-level secret (check)
+      karcadia.harness.secret:
+        state: present
+        id: demo_org_secret
+        org: default
+        description: demo description
+        tags:
+          builtby: harness-iac
+        spec:
+          secret_manager_identifier: harnessSecretManager
+          value_type: Inline
+          type: SecretText
+          value: 'secret text value'
+      check_mode: True
+      register: check_org_create_secret
+      when: secrets
+
+    - name: debug check_org_create_secret
+      debug:
+        var: check_org_create_secret
+      when: secrets
+
+    - name: Create org-level secret
+      karcadia.harness.secret:
+        state: present
+        id: demo_org_secret
+        org: default
+        description: demo description
+        tags:
+          builtby: harness-iac
+        spec:
+          secret_manager_identifier: harnessSecretManager
+          value_type: Inline
+          type: SecretText
+          value: 'secret text value'
+        #force_update: True
+      register: create_org_secret
+      when: secrets
+
+    - name: debug create_org_secret
+      debug:
+        var: create_org_secret
+      when: secrets
+
+    - name: Delete org-level secret (check)
+      karcadia.harness.secret:
+        state: absent
+        id: demo_org_secret
+        org: default
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_org_delete_secret
+      when: secrets
+
+    - name: debug check_org_delete_secret
+      debug:
+        var: check_org_delete_secret
+      when: secrets
+
+# Project
+    - name: Create project-level secret (check)
+      karcadia.harness.secret:
+        state: present
+        id: demo_secret
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          secret_manager_identifier: harnessSecretManager
+          value_type: Inline
+          type: SecretText
+          value: 'secret text value'
+      check_mode: True
+      register: check_project_create_secret
+      when: secrets
+
+    - name: debug check_project_create_secret
+      debug:
+        var: check_project_create_secret
+      when: secrets
+
+    - name: Create project-level secret
+      karcadia.harness.secret:
+        state: present
+        id: demo_secret
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          secret_manager_identifier: harnessSecretManager
+          value_type: Inline
+          type: SecretText
+          value: 'secret text value'
+      register: create_project_secret
+      when: secrets
+
+    - name: debug create_project_secret
+      debug:
+        var: create_project_secret
+      when: secrets
+
+    - name: Delete project-level secret (check)
+      karcadia.harness.secret:
+        state: absent
+        id: demo_secret
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_project_delete_secret
+      when: secrets
+
+    - name: debug check_project_delete_secret
+      debug:
+        var: check_project_delete_secret
+      when: secrets
+
+## End secrets
+## Begin connectors
+# Account
+    - name: Create account-level connector (check)
+      karcadia.harness.connector:
+        state: present
+        id: demo_account_connector
+        description: demo_description
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: account.demo_account_secret
+      check_mode: True
+      register: check_account_create_connector
+      when: connectors
+
+    - name: debug check_account_create_connector
+      debug:
+        var: check_account_create_connector
+      when: connectors
+
+    - name: Create account-level connector
+      karcadia.harness.connector:
+        state: present
+        id: demo_account_connector
+        description: demo_description
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: account.demo_account_secret
+      register: create_account_connector
+      when: connectors
+
+    - name: debug create_account_connector
+      debug:
+        var: create_account_connector
+      when: connectors
+
+    - name: Delete account-level connector (check)
+      karcadia.harness.connector:
+        state: absent
+        id: demo_account_connector
+      check_mode: True
+      register: check_account_delete_connector
+      when: connectors
+
+    - name: debug check_account_delete_connector
+      debug:
+        var: check_account_delete_connector
+      when: connectors
+
+    - name: Delete account-level connector
+      karcadia.harness.connector:
+        state: absent
+        id: demo_account_connector
+      register: account_delete_connector
+      when: connectors
+
+    - name: debug account_delete_connector
+      debug:
+        var: account_delete_connector
+      when: connectors
+# Org
+    - name: Create org-level connector (check)
+      karcadia.harness.connector:
+        state: present
+        id: demo_org_connector
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: org.demo_org_secret
+      check_mode: True
+      register: check_org_create_connector
+      when: connectors
+
+    - name: debug check_org_create_connector
+      debug:
+        var: check_org_create_connector
+      when: connectors
+
+    - name: Create org-level connector
+      karcadia.harness.connector:
+        state: present
+        id: demo_org_connector
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: org.demo_org_secret
+      register: create_org_connector
+      when: connectors
+
+    - name: debug create_org_connector
+      debug:
+        var: create_org_connector
+      when: connectors
+
+    - name: Create org-level legacy connector
+      karcadia.harness.legacy_connector:
+        state: present
+        id: demo_org_snow_connector
+        org: default
+        type: ServiceNow
+        description: demo description
+        tags:
+          builtby: harness-iac
+        spec:
+          serviceNowUrl: https://taco.servicenow.com
+          auth:
+            type: UsernamePassword
+            spec:
+              username: bob
+              passwordRef: org.demo_org_secret
+      register: create_legacy_org_connector
+      when: connectors
+
+    - name: debug create_legacy_org_connector
+      debug:
+        var: create_legacy_org_connector
+      when: connectors
+
+    - name: Delete org-level connector (check)
+      karcadia.harness.connector:
+        state: absent
+        id: demo_org_connector
+        org: default
+      check_mode: True
+      register: check_org_delete_connector
+      when: connectors
+
+    - name: debug check_org_delete_connector
+      debug:
+        var: check_org_delete_connector
+      when: connectors
+
+    - name: Delete org-level connector
+      karcadia.harness.connector:
+        state: absent
+        id: demo_org_connector
+        org: default
+      register: org_delete_connector
+      when: connectors
+
+    - name: debug org_delete_connector
+      debug:
+        var: org_delete_connector
+      when: connectors
+
+    - name: Delete org-level legacy connector
+      karcadia.harness.legacy_connector:
+        state: absent
+        id: demo_org_snow_connector
+        org: default
+      when: connectors
+
+# Project
+    - name: Create project-level connector (check)
+      karcadia.harness.connector:
+        state: present
+        id: demo_connector
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: dorg.demo_org_secret
+      check_mode: True
+      register: check_project_create_connector
+      when: connectors
+
+    - name: debug check_project_create_connector
+      debug:
+        var: check_project_create_connector
+      when: connectors
+
+    - name: Create project-level connector
+      karcadia.harness.connector:
+        state: present
+        id: demo_connector
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: org.demo_org_secret
+      register: create_project_connector
+      when: connectors
+
+    - name: debug create_project_connector
+      debug:
+        var: create_project_connector
+      when: connectors
+
+    - name: Delete project-level connector (check)
+      karcadia.harness.connector:
+        state: absent
+        id: demo_connector
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_connector
+      when: connectors
+
+    - name: debug check_project_delete_connector
+      debug:
+        var: check_project_delete_connector
+      when: connectors
+
+    - name: Delete project-level connector
+      karcadia.harness.connector:
+        state: absent
+        id: demo_connector
+        org: default
+        project: demo_project
+      register: project_delete_connector
+      when: connectors
+
+    - name: debug project_delete_connector
+      debug:
+        var: project_delete_connector
+      when: connectors
+## End connectors
+## Begin roles
+# Account
+    - name: Create account-level role (check)
+      karcadia.harness.role:
+        state: present
+        id: demo_account_role
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      check_mode: True
+      register: check_account_create_role
+      when: roles
+
+    - name: debug check_account_create_role
+      debug:
+        var: check_account_create_role
+      when: roles
+
+    - name: Create account-level role
+      karcadia.harness.role:
+        state: present
+        id: demo_account_role
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      register: create_account_role
+      when: roles
+
+    - name: debug create_account_role
+      debug:
+        var: create_account_role
+      when: roles
+
+    - name: Delete account-level role (check)
+      karcadia.harness.role:
+        state: absent
+        id: demo_account_role
+      check_mode: True
+      register: check_account_delete_role
+      when: roles
+
+    - name: debug check_account_delete_role
+      debug:
+        var: check_account_delete_role
+      when: roles
+
+    - name: Delete account-level role
+      karcadia.harness.role:
+        state: absent
+        id: demo_account_role
+      register: account_delete_role
+      when: roles
+
+    - name: debug account_delete_role
+      debug:
+        var: account_delete_role
+      when: roles
+# Org
+    - name: Create org-level role (check)
+      karcadia.harness.role:
+        state: present
+        id: demo_org_role
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      check_mode: True
+      register: check_org_create_role
+      when: roles
+
+    - name: debug check_org_create_role
+      debug:
+        var: check_org_create_role
+      when: roles
+
+    - name: Create org-level role
+      karcadia.harness.role:
+        state: present
+        id: demo_org_role
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      register: create_org_role
+      when: roles
+
+    - name: debug create_org_role
+      debug:
+        var: create_org_role
+      when: roles
+
+    - name: Delete org-level role (check)
+      karcadia.harness.role:
+        state: absent
+        id: demo_org_role
+        org: default
+      check_mode: True
+      register: check_org_delete_role
+      when: roles
+
+    - name: debug check_org_delete_role
+      debug:
+        var: check_org_delete_role
+      when: roles
+
+    - name: Delete org-level role
+      karcadia.harness.role:
+        state: absent
+        id: demo_org_role
+        org: default
+      register: org_delete_role
+      when: roles
+
+    - name: debug org_delete_role
+      debug:
+        var: org_delete_role
+      when: roles
+# Project
+    - name: Create project-level role (check)
+      karcadia.harness.role:
+        state: present
+        id: demo_role
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      check_mode: True
+      register: check_project_create_role
+      when: roles
+
+    - name: debug check_project_create_role
+      debug:
+        var: check_project_create_role
+      when: roles
+
+    - name: Create project-level role
+      karcadia.harness.role:
+        state: present
+        id: demo_role
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      register: create_project_role
+      when: roles
+
+    - name: debug create_project_role
+      debug:
+        var: create_project_role
+      when: roles
+
+    - name: Delete project-level role (check)
+      karcadia.harness.role:
+        state: absent
+        id: demo_role
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_role
+      when: roles
+
+    - name: debug check_project_delete_role
+      debug:
+        var: check_project_delete_role
+      when: roles
+
+    - name: Delete project-level role
+      karcadia.harness.role:
+        state: absent
+        id: demo_role
+        org: default
+        project: demo_project
+      register: project_delete_role
+      when: roles
+
+    - name: debug project_delete_role
+      debug:
+        var: project_delete_role
+      when: roles
+## End roles
+## Begin templates
+# Account
+    - name: Create account-level template (check)
+      karcadia.harness.template:
+        state: present
+        id: demo_account_template
+        description: demo description
+        template_yaml: "{{ lookup('file', 'template_account_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      check_mode: True
+      register: check_account_create_template
+      when: templates
+
+    - name: debug check_account_create_template
+      debug:
+        var: check_account_create_template
+      when: templates
+
+    - name: Create account-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_account_template
+        description: demo description
+        template_yaml: "{{ lookup('file', 'template_account_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: create_account_template
+      when: templates
+
+    - name: debug create_account_template
+      debug:
+        var: create_account_template
+      when: templates
+
+    - name: Delete account-level template (check)
+      karcadia.harness.template:
+        state: absent
+        id: demo_account_template
+      check_mode: True
+      register: check_account_delete_template
+      when: templates
+
+    - name: debug check_account_delete_template
+      debug:
+        var: check_account_delete_template
+      when: templates
+
+    - name: Delete account-level template
+      karcadia.harness.template:
+        state: absent
+        id: demo_account_template
+      register: account_delete_template
+      when: templates
+
+    - name: debug account_delete_template
+      debug:
+        var: account_delete_template
+      when: templates
+# Org
+    - name: Create org-level template (check)
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      check_mode: True
+      register: check_org_create_template
+      when: templates
+
+    - name: debug check_org_create_template
+      debug:
+        var: check_org_create_template
+      when: templates
+
+    - name: Create org-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: create_org_template
+      when: templates
+
+    - name: debug create_org_template
+      debug:
+        var: create_org_template
+      when: templates
+
+    - name: Delete org-level template (check)
+      karcadia.harness.template:
+        state: absent
+        id: demo_org_template
+        org: default
+      check_mode: True
+      register: check_org_delete_template
+      when: templates
+
+    - name: debug check_org_delete_template
+      debug:
+        var: check_org_delete_template
+      when: templates
+
+    - name: Delete org-level template
+      karcadia.harness.template:
+        state: absent
+        id: demo_org_template
+        org: default
+      register: org_delete_template
+      when: templates
+
+    - name: debug org_delete_template
+      debug:
+        var: org_delete_template
+      when: templates
+# Project
+    - name: Create project-level template (check)
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        project: demo_project
+        template_yaml: "{{ lookup('file', 'template_project_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      check_mode: True
+      register: check_project_create_template
+      when: templates
+
+    - name: debug check_project_create_template
+      debug:
+        var: check_project_create_template
+      when: templates
+
+    - name: Create project-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_project_template
+        org: default
+        project: demo_project
+        template_yaml: "{{ lookup('file', 'template_project_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: create_project_template
+      when: templates
+
+    - name: debug create_project_template
+      debug:
+        var: create_project_template
+      when: templates
+
+    - name: Delete project-level template (check)
+      karcadia.harness.template:
+        state: absent
+        id: demo_project_template
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_template
+      when: templates
+
+    - name: debug check_project_delete_template
+      debug:
+        var: check_project_delete_template
+      when: templates
+
+    - name: Delete project-level template
+      karcadia.harness.template:
+        state: absent
+        id: demo_project_template
+        org: default
+        project: demo_project
+      register: project_delete_template
+      when: templates
+
+    - name: debug project_delete_template
+      debug:
+        var: project_delete_template
+      when: templates
+## End templates
+## Begin pipelines
+# Pipelines are project-level only.
+
+    - name: Create pipeline (check)
+      karcadia.harness.pipeline:
+        state: present
+        id: demo_pipeline
+        org: default
+        project: demo_project
+        description: "demo description"
+        tags:
+          builtby: harness-iac
+        pipeline_yaml: "{{ lookup('file', 'pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+      check_mode: True
+      register: check_create_pipeline
+      when: pipelines
+
+    - name: debug check_create_pipeline
+      debug:
+        var: check_create_pipeline
+      when: pipelines
+
+    - name: Create pipeline
+      karcadia.harness.pipeline:
+        state: present
+        id: demo_pipeline
+        org: default
+        project: demo_project
+        description: "demo description"
+        tags:
+          builtby: harness-iac
+        pipeline_yaml: "{{ lookup('file', 'pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+      register: create_pipeline
+      when: pipelines
+
+    - name: debug create_pipeline
+      debug:
+        var: create_pipeline
+      when: pipelines
+
+    - name: Delete pipeline (check)
+      karcadia.harness.pipeline:
+        state: absent
+        id: demo_pipeline
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_delete_pipeline
+      when: pipelines
+
+    - name: debug check_delete_pipeline
+      debug:
+        var: check_delete_pipeline
+      when: pipelines
+
+    - name: Delete pipeline
+      karcadia.harness.pipeline:
+        state: absent
+        id: demo_pipeline
+        org: default
+        project: demo_project
+      register: delete_pipeline
+      when: pipelines
+
+    - name: debug delete_pipeline
+      debug:
+        var: delete_pipeline
+      when: pipelines
+## End pipelines
+## Begin services
+# Account
+    - name: Create account-level service (check)
+      karcadia.harness.service:
+        state: present
+        id: demo_account_service
+        description: demo description
+        yaml:
+          service:
+            name: demo_account_service
+            identifier: demo_account_service
+      check_mode: True
+      register: check_account_create_service
+      when: services
+
+    - name: debug check_account_create_service
+      debug:
+        var: check_account_create_service
+      when: services
+
+    - name: Create account-level service
+      karcadia.harness.service:
+        state: present
+        id: demo_account_service
+        description: demo description
+        yaml:
+          service:
+            name: demo_account_service
+            identifier: demo_account_service
+      register: create_account_service
+      when: services
+
+    - name: debug create_account_service
+      debug:
+        var: create_account_service
+      when: services
+
+    - name: stop
+      fail:
+
+    - name: Delete account-level service (check)
+      karcadia.harness.service:
+        state: absent
+        id: demo_account_service
+      check_mode: True
+      register: check_account_delete_service
+      when: services
+
+    - name: debug check_account_delete_service
+      debug:
+        var: check_account_delete_service
+      when: services
+
+    - name: Delete account-level service
+      karcadia.harness.service:
+        state: absent
+        id: demo_account_service
+      register: account_delete_service
+      when: services
+
+    - name: debug account_delete_service
+      debug:
+        var: account_delete_service
+      when: services
+# Org
+## Final Cleanup
+    - name: Delete project-level secret
+      karcadia.harness.secret:
+        state: absent
+        id: demo_secret
+        org: default
+        project: demo_project
+      register: project_delete_secret
+      when: secrets
+
+    - name: debug project_delete_secret
+      debug:
+        var: project_delete_secret
+      when: secrets
+
+    - name: Delete project (check)
+      karcadia.harness.project:
+        state: absent
+        id: demo_project
+        org: default
+      check_mode: True
+      register: check_delete_project
+
+    - name: debug check_delete_project
+      debug:
+        var: check_delete_project
+
+    - name: Delete project
+      karcadia.harness.project:
+        state: absent
+        id: demo_project
+        org: default
+      register: delete_project
+
+    - name: debug delete_project
+      debug:
+        var: delete_project
+
+    - name: Delete account-level secret
+      karcadia.harness.secret:
+        state: absent
+        id: demo_account_secret
+      register: account_delete_secret
+      when: secrets
+
+    - name: debug account_delete_secret
+      debug:
+        var: account_delete_secret
+      when: secrets
+
+    - name: Delete org-level secret
+      karcadia.harness.secret:
+        state: absent
+        id: demo_org_secret
+        org: default
+      register: org_delete_secret
+      when: secrets
+
+    - name: debug org_delete_secret
+      debug:
+        var: org_delete_secret
+      when: secrets
+
+#    - name: delete org
+#      karcadia.harness.org:
+#        state: absent
+#        id: demo_org
