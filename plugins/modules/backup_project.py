@@ -740,6 +740,7 @@ def main():
           org=dict(type='str', required=True, aliases=['org_id']),
           api_key=dict(type='str', required=False),
           account_id=dict(type='str', required=False),
+          dest=dict(type='str', required=False),
       ),
       supports_check_mode = True
     )

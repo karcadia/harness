@@ -114,8 +114,6 @@ def ensure_present(module):
     object_id     = module.params["identifier"]
     template_yaml = module.params["template_yaml"]
     git_details   = module.params["git_details"]
-    #is_stable     = module.params["is_stable"]
-    #comments      = module.params["comments"]
 
     # Ensure all required parameters for a create were provided.
     if not template_yaml:
@@ -149,6 +147,8 @@ def ensure_present(module):
       pre_json_object['description'] = module.params['description']
     if 'comments' in module.params.keys():
       pre_json_object['comments'] = module.params['comments']
+    if 'tags' in module.params.keys():
+      pre_json_object['tags'] = module.params['tags']
 
     if checked_and_present:
       # Determine if the existing object needs to be updated.
@@ -160,6 +160,9 @@ def ensure_present(module):
       if pre_json_object['is_stable'] and pre_json_object['is_stable'] != existing['is_stable']:
         needs_update = True
         component = 'is_stable'
+      if pre_json_object['tags'] and pre_json_object['tags'] != existing[module.object_type]['tags']:
+        needs_update = True
+        component = 'tags'
       if pre_json_object['template_yaml'] != existing[module.object_type]['yaml']:
         needs_update = True
         component = 'template_yaml'
@@ -293,7 +296,7 @@ def main():
           is_stable=dict(type='bool', required=False),
           description=dict(type='str', required=False),
           comments=dict(type='str', required=False),
-          tags=dict(required=False)
+          tags=dict(type='dict', required=False)
       ),
       supports_check_mode = True
     )

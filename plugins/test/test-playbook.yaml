@@ -5,10 +5,10 @@
 #    HARNESS_ACCOUNT_ID: abc123
 #    HARNESS_API_KEY: abc123
   vars:
-    secrets: False
-    connectors: False
-    templates: False
-    pipelines: False
+    secrets: True
+    connectors: True
+    templates: True
+    pipelines: True
     services: True
     roles: False
   tasks:
@@ -787,6 +787,44 @@
     - name: debug create_org_template
       debug:
         var: create_org_template
+      when: templates
+
+    - name: Re-enforce same org-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: re_create_org_template
+      when: templates
+
+    - name: debug re_create_org_template
+      debug:
+        var: re_create_org_template
+      when: templates
+
+    - name: Update org-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy_changed.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+        tags:
+          builtby: harness-iac
+      register: update_org_template
+      when: templates
+
+    - name: debug update_org_template
+      debug:
+        var: update_org_template
       when: templates
 
     - name: Delete org-level template (check)
