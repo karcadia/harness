@@ -1,4 +1,0 @@
-existing
-
-{'secret': {'name': 'demo_org_secret', 'identifier': 'demo_org_secret', 'org': 'default', 'project': None, 'tags': {'builtby': 'harness-iac'}, 'description': 'demo description', 'spec': {'type': 'SecretText', 'secret_manager_identifier': 'harnessSecretManager', 'value_type': 'Inline'}}, 'created': 1717109945085, 'updated': 1717110571816, 'draft': False, 'governance_metadata': None}module
-{'secret': {'identifier': 'demo_org_secret', 'name': 'demo_org_secret', 'spec': {'secret_manager_identifier': 'harnessSecretManager', 'value_type': 'Inline', 'type': 'SecretText'}, 'org': 'default', 'description': 'demo description', 'tags': {'builtby': 'harness-iac'}}}

@@ -49,6 +49,28 @@
       debug:
         var: create_project
 
+# Backup Project
+    # - name: backup project (check)
+    #   karcadia.harness.backup_project:
+    #     id: bob
+    #     org: default
+    #   check_mode: True
+    #   register: check_backup_project
+
+    # - name: debug check_backup_project
+    #   debug:
+    #     var: check_backup_project
+
+    # - name: backup project
+    #   karcadia.harness.backup_project:
+    #     id: bob
+    #     org: default
+    #   register: backup_project
+
+    # - name: debug backup_project
+    #   debug:
+    #     var: backup_project
+
 ## Begin secrets
 # Account
     - name: Create account-level secret (check)
@@ -971,9 +993,6 @@
       debug:
         var: create_account_service
       when: services
-
-    - name: stop
-      fail:
 
     - name: Delete account-level service (check)
       karcadia.harness.service:
