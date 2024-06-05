@@ -105,6 +105,7 @@ from ansible.module_utils.basic import AnsibleModule
 # Stdlib Imports
 from os import getenv
 from json import dumps, loads
+from yaml import safe_load
 
 # External Imports
 from requests import request
@@ -355,16 +356,23 @@ def main():
     else:
       module.object_scope = 'account'
 
+    # Pull the version label from the provided template_yaml.
+    template_yaml_str = module.params['template_yaml']
+    template_yaml = safe_load(template_yaml_str)
+    if 'template' not in template_yaml.keys() or 'versionLabel' not in template_yaml['template'].keys():
+      module.fail_json(msg='Provided template_yaml must contain a top level template with a child versionLabel.')
+    version_label = template_yaml['template']['versionLabel']
+
     # Prepare the Harness API URLs for this module.
     if module.object_scope == 'account':
-      module.read_url = f'https://app.harness.io/v1/{module.object_type}s/{object_id}/versions/v1'
+      module.read_url = f'https://app.harness.io/v1/{module.object_type}s/{object_id}/versions/{version_label}'
       module.push_url = f'https://app.harness.io/v1/{module.object_type}s'
     elif module.object_scope == 'org':
-      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s/{object_id}/versions/v1'
+      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s/{object_id}/versions/{version_label}'
       module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s'
     else:
-      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s/{object_id}/versions/v1'
-      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s'       
+      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s/{object_id}/versions/{version_label}'
+      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s'
 
     # Run the appropriate function based on the state requested.
     state = module.params['state']
