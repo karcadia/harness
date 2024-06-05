@@ -180,15 +180,20 @@ def ensure_present(module):
         needs_update = True
         component = 'name'
       # Sanitize spec before checking if it needs an update.
-      del existing[module.object_type]['spec']['username']
-      del existing[module.object_type]['spec']['usernameRef']
-      del existing[module.object_type]['spec']['passwordRef']
+      if 'username' in existing[module.object_type]['spec'].keys():
+        del existing[module.object_type]['spec']['username']
+      if 'usernameRef' in existing[module.object_type]['spec'].keys():
+        del existing[module.object_type]['spec']['usernameRef']
+      if 'passwordRef' in existing[module.object_type]['spec'].keys():
+        del existing[module.object_type]['spec']['passwordRef']
       if 'delegateSelectors' in existing[module.object_type]['spec'].keys() and 'delegate_selectors' not in pre_json_object[module.object_type]['spec'].keys():
         del existing[module.object_type]['spec']['delegateSelectors']
-      if 'username' in existing[module.object_type]['spec']['auth']['spec'].keys() and 'username' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
-        del existing[module.object_type]['spec']['auth']['spec']['username']
-      if 'usernameRef' in existing[module.object_type]['spec']['auth']['spec'].keys() and 'usernameRef' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
-        del existing[module.object_type]['spec']['auth']['spec']['usernameRef']
+      if 'auth' in existing[module.object_type]['spec'].keys():
+        if 'username' in existing[module.object_type]['spec']['auth']['spec'].keys() and 'username' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
+          del existing[module.object_type]['spec']['auth']['spec']['username']
+        if 'usernameRef' in existing[module.object_type]['spec']['auth']['spec'].keys() and 'usernameRef' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
+          del existing[module.object_type]['spec']['auth']['spec']['usernameRef']
+      # Now compare the requested spec with the sanitized existing spec.
       if pre_json_object[module.object_type]['spec'] != existing[module.object_type]['spec']:
         needs_update = True
         component = 'spec'

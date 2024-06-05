@@ -135,6 +135,16 @@ def ensure_present(module):
       checked_and_present = True
     else:
       module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct.')
+      # Try to extract the detail to return with our failure.
+      status_code = str(harness_response.status_code)
+      msg = f'Harness {module.object_title} creation has failed. Status Code: {status_code}'
+      if type(harness_response.text) is dict():
+        error_dict = eval(harness_response.text)
+        error_message = error_dict['message']
+        msg += f'{error_message}'
+      else:
+        msg.append(harness_response.text)
+      module.fail_json(msg=msg)
 
     # Prepare the object with the required fields.
     pre_json_object = {
