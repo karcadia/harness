@@ -170,12 +170,14 @@ def ensure_present(module):
       # Determine if the existing object needs to be updated.
       existing = loads(harness_response.text)['data']
       needs_update = False
-      if pre_json_object[module.object_type]['description'] and pre_json_object[module.object_type]['description'] != existing[module.object_type]['description']:
-        needs_update = True
-        component = 'description'
-      if pre_json_object[module.object_type]['tags'] and pre_json_object[module.object_type]['tags'] != existing[module.object_type]['tags']:
-        needs_update = True
-        component = 'tags'
+      if pre_json_object[module.object_type]['description'] \
+        and pre_json_object[module.object_type]['description'] != existing[module.object_type]['description']:
+          needs_update = True
+          component = 'description'
+      if pre_json_object[module.object_type]['tags'] \
+        and pre_json_object[module.object_type]['tags'] != existing[module.object_type]['tags']:
+          needs_update = True
+          component = 'tags'
       if pre_json_object[module.object_type]['name'] != existing[module.object_type]['name']:
         needs_update = True
         component = 'name'
@@ -186,15 +188,27 @@ def ensure_present(module):
         del existing[module.object_type]['spec']['usernameRef']
       if 'passwordRef' in existing[module.object_type]['spec'].keys():
         del existing[module.object_type]['spec']['passwordRef']
-      if 'delegateSelectors' in existing[module.object_type]['spec'].keys() and 'delegate_selectors' not in pre_json_object[module.object_type]['spec'].keys():
-        del existing[module.object_type]['spec']['delegateSelectors']
+      if 'delegateSelectors' in existing[module.object_type]['spec'].keys() \
+        and 'delegateSelectors' not in pre_json_object[module.object_type]['spec'].keys():
+          del existing[module.object_type]['spec']['delegateSelectors']
       if 'auth' in existing[module.object_type]['spec'].keys():
-        if 'username' in existing[module.object_type]['spec']['auth']['spec'].keys() and 'username' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
-          del existing[module.object_type]['spec']['auth']['spec']['username']
-        if 'usernameRef' in existing[module.object_type]['spec']['auth']['spec'].keys() and 'usernameRef' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
-          del existing[module.object_type]['spec']['auth']['spec']['usernameRef']
-      if 'credential' in existing[module.object_type]['spec'].keys() and 'spec' in existing[module.object_type]['spec']['credential'].keys() and existing[module.object_type]['spec']['credential']['spec'] is None:
-        del existing[module.object_type]['spec']['credential']['spec']
+        if 'username' in existing[module.object_type]['spec']['auth']['spec'].keys() \
+          and 'username' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
+            del existing[module.object_type]['spec']['auth']['spec']['username']
+        if 'usernameRef' in existing[module.object_type]['spec']['auth']['spec'].keys() \
+          and 'usernameRef' not in pre_json_object[module.object_type]['spec']['auth']['spec'].keys():
+            del existing[module.object_type]['spec']['auth']['spec']['usernameRef']
+      if 'credential' in existing[module.object_type]['spec'].keys() \
+        and 'spec' in existing[module.object_type]['spec']['credential'].keys() \
+        and existing[module.object_type]['spec']['credential']['spec'] is None:
+          del existing[module.object_type]['spec']['credential']['spec']
+      if 'credential' in existing[module.object_type]['spec'].keys() \
+        and 'spec' in existing[module.object_type]['spec']['credential'].keys() \
+        and 'auth' in existing[module.object_type]['spec']['credential']['spec'].keys() \
+        and 'spec' in existing[module.object_type]['spec']['credential']['spec']['auth'].keys() \
+        and 'caCertRef' in existing[module.object_type]['spec']['credential']['spec']['auth']['spec'].keys() \
+        and existing[module.object_type]['spec']['credential']['spec']['auth']['spec']['caCertRef'] is None:
+          del existing[module.object_type]['spec']['credential']['spec']['auth']['spec']['caCertRef']
       # Now compare the requested spec with the sanitized existing spec.
       if pre_json_object[module.object_type]['spec'] != existing[module.object_type]['spec']:
         needs_update = True
