@@ -95,9 +95,8 @@ def backup_object(module):
     if checked_and_absent:
       module.fail_json(msg=f'{module.object_title} {object_id} does not exist.')
 
-    if 'dest' in module.params.keys():
-      dest = module.params["dest"]
-    else:
+    dest = module.params["dest"]
+    if not dest:
       dest = 'ansible_harness_project_backup_' + object_id + '.tar.gz'
 
     # Handle check mode by pretending we are done now.
@@ -294,7 +293,8 @@ def fetch_infras(module, org_id, project_id, env_id):
     while 'Content-Length' not in resp_headers.keys():
       # Keep calling until we have everything.
       page += 1
-      url = f'https://app.harness.io/ng/api/infrastructures?page={page}&size={page_limit}&accountIdentifier={account_id}&orgIdentifier={org_id}&projectIdentifier={project_id}&sort=name'
+      url = f'https://app.harness.io/ng/api/infrastructures?page={page}&size={page_limit}&accountIdentifier={account_id}'
+      url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}&environmentIdentifier={env_id}&sort=name'
       infra_list_resp = request("GET", url, headers=module.headers)
       infra_list.extend(loads(infra_list_resp.text)['data']['content'])
       resp_headers = infra_list_resp.headers
@@ -306,13 +306,14 @@ def fetch_infras(module, org_id, project_id, env_id):
     msg.append(f'{infra_list_resp.text}')
     module.fail_json(msg=msg)
 
-  # This function gets called multiple times so we only create the folder once.
-  if not isdir(module.work_dir + '/infrastructures'):
-    mkdir(module.work_dir + '/infrastructures')
   # Now that we have all of our infrastructures, write them out to files in our workdir.
   for infra_dict in infra_list:
     infra = infra_dict['infrastructure']
     infra_id = infra['identifier']
+    if not isdir(module.work_dir + '/environments/' + env_id):
+      mkdir(module.work_dir + '/environments/' + env_id)
+    if not isdir(module.work_dir + '/environments/' + env_id + '/infrastructures'):
+      mkdir(module.work_dir + '/environments/' + env_id + '/infrastructures/')
     mkdir(module.work_dir + '/environments/' + env_id + '/infrastructures/' + infra_id)
     infra_filename = module.work_dir + '/environments/' + env_id + '/infrastructures/' + infra_id + '/' + infra_id + '.yaml'
     with open(infra_filename, 'w') as file_writer:

@@ -1,0 +1,163 @@
+# Account
+    - name: Create account-level role (check)
+      karcadia.harness.role:
+        state: present
+        id: demo_account_role
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      check_mode: True
+      register: check_account_create_role
+
+    - name: debug check_account_create_role
+      debug:
+        var: check_account_create_role
+
+    - name: Create account-level role
+      karcadia.harness.role:
+        state: present
+        id: demo_account_role
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      register: create_account_role
+
+    - name: debug create_account_role
+      debug:
+        var: create_account_role
+
+    - name: Delete account-level role (check)
+      karcadia.harness.role:
+        state: absent
+        id: demo_account_role
+      check_mode: True
+      register: check_account_delete_role
+
+    - name: debug check_account_delete_role
+      debug:
+        var: check_account_delete_role
+
+    - name: Delete account-level role
+      karcadia.harness.role:
+        state: absent
+        id: demo_account_role
+      register: account_delete_role
+
+    - name: debug account_delete_role
+      debug:
+        var: account_delete_role
+# Org
+    - name: Create org-level role (check)
+      karcadia.harness.role:
+        state: present
+        id: demo_org_role
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      check_mode: True
+      register: check_org_create_role
+
+    - name: debug check_org_create_role
+      debug:
+        var: check_org_create_role
+
+    - name: Create org-level role
+      karcadia.harness.role:
+        state: present
+        id: demo_org_role
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      register: create_org_role
+
+    - name: debug create_org_role
+      debug:
+        var: create_org_role
+
+    - name: Delete org-level role (check)
+      karcadia.harness.role:
+        state: absent
+        id: demo_org_role
+        org: default
+      check_mode: True
+      register: check_org_delete_role
+
+    - name: debug check_org_delete_role
+      debug:
+        var: check_org_delete_role
+
+    - name: Delete org-level role
+      karcadia.harness.role:
+        state: absent
+        id: demo_org_role
+        org: default
+      register: org_delete_role
+
+    - name: debug org_delete_role
+      debug:
+        var: org_delete_role
+
+# Project
+    - name: Create project-level role (check)
+      karcadia.harness.role:
+        state: present
+        id: demo_role
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      check_mode: True
+      register: check_project_create_role
+
+    - name: debug check_project_create_role
+      debug:
+        var: check_project_create_role
+
+    - name: Create project-level role
+      karcadia.harness.role:
+        state: present
+        id: demo_role
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+      register: create_project_role
+
+    - name: debug create_project_role
+      debug:
+        var: create_project_role
+
+    - name: Delete project-level role (check)
+      karcadia.harness.role:
+        state: absent
+        id: demo_role
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_role
+
+    - name: debug check_project_delete_role
+      debug:
+        var: check_project_delete_role
+
+    - name: Delete project-level role
+      karcadia.harness.role:
+        state: absent
+        id: demo_role
+        org: default
+        project: demo_project
+      register: project_delete_role
+
+    - name: debug project_delete_role
+      debug:
+        var: project_delete_role

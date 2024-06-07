@@ -1,0 +1,224 @@
+# Account
+    - name: Create account-level connector (check)
+      karcadia.harness.connector:
+        state: present
+        id: demo_account_connector
+        description: demo_description
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: account.demo_account_secret
+      check_mode: True
+      register: check_account_create_connector
+
+    - name: debug check_account_create_connector
+      debug:
+        var: check_account_create_connector
+
+    - name: Create account-level connector
+      karcadia.harness.connector:
+        state: present
+        id: demo_account_connector
+        description: demo_description
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: account.demo_account_secret
+      register: create_account_connector
+
+    - name: debug create_account_connector
+      debug:
+        var: create_account_connector
+
+    - name: Delete account-level connector (check)
+      karcadia.harness.connector:
+        state: absent
+        id: demo_account_connector
+      check_mode: True
+      register: check_account_delete_connector
+
+    - name: debug check_account_delete_connector
+      debug:
+        var: check_account_delete_connector
+
+    - name: Delete account-level connector
+      karcadia.harness.connector:
+        state: absent
+        id: demo_account_connector
+      register: account_delete_connector
+
+    - name: debug account_delete_connector
+      debug:
+        var: account_delete_connector
+
+# Org
+    - name: Create org-level connector (check)
+      karcadia.harness.connector:
+        state: present
+        id: demo_org_connector
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: org.demo_org_secret
+      check_mode: True
+      register: check_org_create_connector
+
+    - name: debug check_org_create_connector
+      debug:
+        var: check_org_create_connector
+
+    - name: Create org-level connector
+      karcadia.harness.connector:
+        state: present
+        id: demo_org_connector
+        org: default
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: org.demo_org_secret
+      register: create_org_connector
+
+    - name: debug create_org_connector
+      debug:
+        var: create_org_connector
+
+    - name: Create org-level legacy connector
+      karcadia.harness.legacy_connector:
+        state: present
+        id: demo_org_snow_connector
+        org: default
+        type: ServiceNow
+        description: demo description
+        tags:
+          builtby: harness-iac
+        spec:
+          serviceNowUrl: https://taco.servicenow.com
+          auth:
+            type: UsernamePassword
+            spec:
+              username: bob
+              passwordRef: org.demo_org_secret
+      register: create_legacy_org_connector
+
+    - name: debug create_legacy_org_connector
+      debug:
+        var: create_legacy_org_connector
+
+    - name: Delete org-level connector (check)
+      karcadia.harness.connector:
+        state: absent
+        id: demo_org_connector
+        org: default
+      check_mode: True
+      register: check_org_delete_connector
+
+    - name: debug check_org_delete_connector
+      debug:
+        var: check_org_delete_connector
+
+    - name: Delete org-level connector
+      karcadia.harness.connector:
+        state: absent
+        id: demo_org_connector
+        org: default
+      register: org_delete_connector
+
+    - name: debug org_delete_connector
+      debug:
+        var: org_delete_connector
+
+    - name: Delete org-level legacy connector
+      karcadia.harness.legacy_connector:
+        state: absent
+        id: demo_org_snow_connector
+        org: default
+
+# Project
+    - name: Create project-level connector (check)
+      karcadia.harness.connector:
+        state: present
+        id: demo_connector
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: dorg.demo_org_secret
+      check_mode: True
+      register: check_project_create_connector
+
+    - name: debug check_project_create_connector
+      debug:
+        var: check_project_create_connector
+
+    - name: Create project-level connector
+      karcadia.harness.connector:
+        state: present
+        id: demo_connector
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        spec:
+          type: GitHttp
+          url: https://github.com/karcadia
+          validation_repo: ansible_kubernetes
+          connection_type: Repo
+          username: bob
+          password_ref: org.demo_org_secret
+      register: create_project_connector
+
+    - name: debug create_project_connector
+      debug:
+        var: create_project_connector
+
+    - name: Delete project-level connector (check)
+      karcadia.harness.connector:
+        state: absent
+        id: demo_connector
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_connector
+
+    - name: debug check_project_delete_connector
+      debug:
+        var: check_project_delete_connector
+
+    - name: Delete project-level connector
+      karcadia.harness.connector:
+        state: absent
+        id: demo_connector
+        org: default
+        project: demo_project
+      register: project_delete_connector
+
+    - name: debug project_delete_connector
+      debug:
+        var: project_delete_connector

@@ -6,42 +6,42 @@
 
 DOCUMENTATION = r"""
 ---
-module: secret
-version_added: 0.1.0
-short_description: Manage Harness Secret
+module: environment
+version_added: 0.2.4
+short_description: Manage Harness Environment
 description:
-  - Manage Harness Secrets.
+  - Manage Harness Environments.
 author:
   - Justin McCormick (@karcadia)
 options:
   identifier:
-    description: Identifier of the Harness Secret.
-    required: True
+    description: Identifier of the Harness Environment.
+    required: False
     type: str
   org:
-    description: Identifier of the Harness Organization to which the Secret will belong.
+    description: Identifier of the Harness Organization to which the Environment will belong.
     required: False
     type: str
   project:
-    description: Identifier of the Harness Project to which the Secret will belong.
+    description: Identifier of the Harness Organization to which the Environment will belong.
     required: False
     type: str
   state:
-    description: Desired state of the Harness Secret.
+    description: Desired state of the Harness Environment.
     choices:
       - absent
       - present
     default: present
     type: str
   name:
-    description: Name of the Harness Secret.
+    description: Name of the Harness Environment.
     required: False
     type: str
   tags:
-    description: A dictionary of tags to add the Harness Secret.
+    description: A dictionary of tags to add the Harness Environment.
     type: dict
   description:
-    description: A description to apply to the Harness Secret.
+    description: A description to apply to the Harness Environment.
     required: False
     type: str
   spec:
@@ -53,51 +53,51 @@ options:
 EXAMPLES = r"""
 # Note: These examples do not set authentication details.
 
-- name: Create a Harness Secret.
-  karcadia.harness.secret:
-    identifier: demo_secret
+- name: Create a Harness Environment.
+  karcadia.harness.environment:
+    identifier: demo_environment
     org: my_demo_org
 
-- name: Create a Harness Secret.
-  karcadia.harness.secret:
-    identifier: my_demo_secret
+- name: Create a Harness Environment.
+  karcadia.harness.environment:
+    identifier: my_demo_environment
     org: my_demo_org
-    name: my-demo-secret
-    description: The Secret used for a Demo.
+    name: my-demo-environment
+    description: The Environment used for a Demo.
     state: present
     tags:
       purpose: demo
 
-- name: Delete a Harness Secret.
-  karcadia.harness.secret:
-    identifier: demo_secret
+- name: Delete a Harness Environment.
+  karcadia.harness.environment:
+    identifier: demo_environment
     org: my_demo_org
     state: absent
 """
 
 RETURN = r"""
-secret:
-  description: The secret structure that was created.
+environment:
+  description: The environment structure that was created.
   returned: when state is present
   type: dict
   suboptions:
     description:
-      description: The description applied to the Harness Secret.
+      description: The description applied to the Harness Environment.
       type: str
     identifier:
-      description: Identifier of the Harness Secret.
+      description: Identifier of the Harness Environment.
       type: str
     name:
-      description: Name of the Harness Secret.
+      description: Name of the Harness Environment.
       type: str
     org:
-      description: Identifier of the Harness Organization to which the Secret belongs.
+      description: Identifier of the Harness Organization to which the Environment belongs.
       type: str
     project:
-      description: Identifier of the Harness Project to which the Secret belongs.
+      description: Identifier of the Harness Project to which the Environment belongs.
       type: str
     tags:
-      description: A dictionary of tags attached to the Harness Secret.
+      description: A dictionary of tags attached to the Harness Environment.
       type: dict
 """
 
@@ -117,15 +117,15 @@ def ensure_present(module):
     object_name = module.params["name"]
     org_id      = module.params["org"]
     project_id  = module.params["project"]
-    spec        = module.params["spec"]
-
-    # Ensure all required parameters for a create were provided.
-    if not spec:
-      module.fail_json(msg='The spec parameter must be provided when state is present.')
+    env_type    = module.params["type"]
 
     # Use the same name as ID if name was not provided.
     if not object_name:
       object_name = object_id
+
+    # Default to PreProduction as env_type if user did not provide one.
+    if not env_type:
+      env_type = 'PreProduction'
     
     # Start with some assumptions.
     checked_and_absent = False
@@ -137,70 +137,80 @@ def ensure_present(module):
       checked_and_absent = True
     elif harness_response.status_code == 200:
       checked_and_present = True
+    elif harness_response.status_code == 400:
+      harness_response_dict = loads(harness_response.text)
+      harness_response_code = harness_response_dict['code']
+      if harness_response_code == 'RESOURCE_NOT_FOUND_EXCEPTION':
+        checked_and_absent = True
+      else:
+        module.fail_json(msg=harness_response_code)
     else:
       module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct.')
 
     # Prepare the object with the required fields.
     pre_json_object = {
-      module.object_type: {
-        "identifier": object_id,
-        "name": object_name,
-        "spec": spec,
-      }
+      "identifier": object_id,
+      "name": object_name,
+      "type": env_type,
     }
 
     # Attach the org and project IDs as needed.
     if module.object_scope == 'project':
-      pre_json_object[module.object_type]['org'] = org_id
-      pre_json_object[module.object_type]['project'] = project_id
+      pre_json_object['orgIdentifier'] = org_id
+      pre_json_object['projectIdentifier'] = project_id
     elif module.object_scope == 'org':
-      pre_json_object[module.object_type]['org'] = org_id
+      pre_json_object['orgIdentifier'] = org_id
 
     # Add anything additional that was provided.
     if 'description' in module.params.keys():
-      pre_json_object[module.object_type]['description'] = module.params['description']
+      pre_json_object['description'] = module.params['description']
     if 'tags' in module.params.keys():
-      pre_json_object[module.object_type]['tags'] = module.params['tags']
+      pre_json_object['tags'] = module.params['tags']
+    if 'color' in module.params.keys():
+      pre_json_object['color'] = module.params['color']
+    if 'yaml' in module.params.keys():
+      pre_json_object['yaml'] = module.params['yaml']
 
     if checked_and_present:
       # Determine if the existing object needs to be updated.
-      existing = loads(harness_response.text)
+      existing = loads(harness_response.text)['data'][module.object_type]
       needs_update = False
-      if pre_json_object[module.object_type]['description'] and pre_json_object[module.object_type]['description'] != existing[module.object_type]['description']:
-        needs_update = True
-        component = 'description'
-      if pre_json_object[module.object_type]['tags'] and pre_json_object[module.object_type]['tags'] != existing[module.object_type]['tags']:
-        needs_update = True
-        component = 'tags'
-      if pre_json_object[module.object_type]['name'] != existing[module.object_type]['name']:
+      if pre_json_object['description'] \
+        and pre_json_object['description'] != existing['description']:
+          needs_update = True
+          component = 'description'
+      if pre_json_object['tags'] \
+        and pre_json_object['tags'] != existing['tags']:
+          needs_update = True
+          component = 'tags'
+      if pre_json_object['color'] \
+        and pre_json_object['color'] != existing['color']:
+          needs_update = True
+          component = 'color'
+      if pre_json_object['yaml'] \
+        and pre_json_object['yaml'] != existing['yaml']:
+          needs_update = True
+          component = 'yaml'
+      if pre_json_object['name'] != existing['name']:
         needs_update = True
         component = 'name'
-      if module.params["force_update"]:
-        needs_update = True
-        component = 'force_update'
-      # Sanitize spec before checking if it needs an update.
-      del existing[module.object_type]['spec']['additional_metadata']
-      del existing[module.object_type]['spec']['value']
-      user_provided_spec = pre_json_object[module.object_type]['spec']
-      del user_provided_spec['value']
-      if user_provided_spec != existing[module.object_type]['spec']:
-        needs_update = True
-        component = 'spec'
       
       # Stop here if no updates are needed. Otherwise we'll use a PUT method to update the existing object.
       if needs_update:
         method = 'PUT'
-        url = module.read_url
+        url = module.push_url
         if module.check_mode:
           # Return success with the object that we would have created.
-          module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True, secret=pre_json_object, updated=True, component_triggering_update=component)
+          module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True,
+                           environment=pre_json_object, updated=True, component_triggering_update=component)
       else:
         module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already present and in the desired state.')
 
     if checked_and_absent:
       if module.check_mode:
         # Return success with the object that we would have created.
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.', check_mode=True, secret=pre_json_object[module.object_type])
+        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.',
+                         check_mode=True, environment=pre_json_object)
 
       # We will use a POST method to create the missing object.
       method = 'POST'
@@ -211,16 +221,15 @@ def ensure_present(module):
 
     # Interpret the API response.
     if create_object_resp.status_code == 200:
-      actioned = 'updated'
       # Extract the object returned from the Harness API and return it with our successful module exit.
       object_resp_dict = loads(create_object_resp.text)
-      module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', secret=object_resp_dict, updated=True, component_triggering_update=component)
-    if create_object_resp.status_code == 201:
-      actioned = 'created'
-      # Extract the object returned from the Harness API and return it with our successful module exit.
-      object_resp_dict = loads(create_object_resp.text)
-      object_resp = object_resp_dict[module.object_type]
-      module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', secret=object_resp)
+      if method == 'POST':
+        actioned = 'created'
+        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', environment=object_resp_dict)
+      if method == 'PUT':
+        actioned = 'updated'
+        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.',
+                        environment=object_resp_dict, updated=True, component_triggering_update=component)
     else:
       # Try to extract the status_code to return with our failure.
       status_code = str(create_object_resp.status_code)
@@ -286,22 +295,23 @@ def main():
     module = AnsibleModule(
       argument_spec = dict(
           name=dict(type='str', required=False),
-          identifier=dict(type='str', required=True, aliases=['id', 'secret_id']),
+          identifier=dict(type='str', required=True, aliases=['id', 'env_id']),
           org=dict(type='str', required=False, aliases=['org_id']),
           project=dict(type='str', required=False, aliases=['project_id']),
           state=dict(type='str', required=False, choices=['present', 'absent'], default='present'),
           api_key=dict(type='str', required=False),
           account_id=dict(type='str', required=False),
           description=dict(type='str', required=False, aliases=['desc']),
-          spec=dict(type='dict', required=False),
+          type=dict(type='str', required=False),
+          color=dict(type='str', required=False),
           tags=dict(type='dict', required=False),
-          force_update=dict(type='bool', required=False),
+          yaml=dict(type='str', required=False),
       ),
       supports_check_mode = True
     )
 
     # Set the object type for this module.
-    module.object_type = 'secret'
+    module.object_type = 'environment'
     module.object_title = module.object_type.title()
 
     # Catch and fail when we were given an ID with a dash in it.
@@ -355,15 +365,12 @@ def main():
       module.object_scope = 'account'
 
     # Prepare the Harness API URLs for this module.
-    if module.object_scope == 'account':
-      module.read_url = f'https://app.harness.io/v1/{module.object_type}s/{object_id}'
-      module.push_url = f'https://app.harness.io/v1/{module.object_type}s'
-    elif module.object_scope == 'org':
-      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s/{object_id}'
-      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s'
-    else:
-      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s/{object_id}'
-      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s'
+    module.push_url = f'https://app.harness.io/ng/api/environmentsV2?accountIdentifier={module.account_id}'
+    module.read_url = f'https://app.harness.io/ng/api/environmentsV2/{object_id}?accountIdentifier={module.account_id}&deleted=false'
+    if module.object_scope == 'org':
+      module.read_url += f'&orgIdentifier={org_id}'
+    elif module.object_scope == 'project':
+      module.read_url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}'
 
     # Run the appropriate function based on the state requested.
     state = module.params['state']

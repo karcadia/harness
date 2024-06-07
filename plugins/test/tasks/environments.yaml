@@ -1,0 +1,148 @@
+# Account
+    - name: Create account-level environment (check)
+      karcadia.harness.environment:
+        state: present
+        id: demo_account_environment
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_account_create_environment
+
+    - name: debug check_account_create_environment
+      debug:
+        var: check_account_create_environment
+
+    - name: Create account-level environment
+      karcadia.harness.environment:
+        state: present
+        id: demo_account_environment
+        tags:
+          builtby: harness-iac
+        yaml:
+          environment:
+            name: demo_account_environment
+            identifier: demo_account_environment
+            tags:
+              builtby: harness-iac
+            type: PreProduction
+            variables:
+              - name: var1
+                type: String
+                value: val2
+                description: ""
+                required: false
+      register: create_account_environment
+
+    - name: debug create_account_environment
+      debug:
+        var: create_account_environment
+
+    - name: Delete account-level environment (check)
+      karcadia.harness.environment:
+        state: absent
+        id: demo_account_environment
+      check_mode: True
+      register: check_account_delete_environment
+
+    - name: debug check_account_delete_environment
+      debug:
+        var: check_account_delete_environment
+
+    - name: Delete account-level environment
+      karcadia.harness.environment:
+        state: absent
+        id: demo_account_environment
+      register: account_delete_environment
+
+    - name: debug account_delete_environment
+      debug:
+        var: account_delete_environment
+
+# Org        
+    - name: Create org-level environment (check)
+      karcadia.harness.environment:
+        state: present
+        id: demo_org_environment
+        org: default
+        description: demo description
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_org_create_environment
+
+    - name: debug check_org_create_environment
+      debug:
+        var: check_org_create_environment
+
+    - name: Create org-level environment
+      karcadia.harness.environment:
+        state: present
+        id: demo_org_environment
+        org: default
+        description: demo description
+        tags:
+          builtby: harness-iac
+      register: create_org_environment
+
+    - name: debug create_org_environment
+      debug:
+        var: create_org_environment
+
+    - name: Delete org-level environment (check)
+      karcadia.harness.environment:
+        state: absent
+        id: demo_org_environment
+        org: default
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_org_delete_environment
+
+    - name: debug check_org_delete_environment
+      debug:
+        var: check_org_delete_environment
+
+# Project
+    - name: Create project-level environment (check)
+      karcadia.harness.environment:
+        state: present
+        id: demo_environment
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_project_create_environment
+
+    - name: debug check_project_create_environment
+      debug:
+        var: check_project_create_environment
+
+    - name: Create project-level environment
+      karcadia.harness.environment:
+        state: present
+        id: demo_environment
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+      register: create_project_environment
+
+    - name: debug create_project_environment
+      debug:
+        var: create_project_environment
+
+    - name: Delete project-level environment (check)
+      karcadia.harness.environment:
+        state: absent
+        id: demo_environment
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+      check_mode: True
+      register: check_project_delete_environment
+
+    - name: debug check_project_delete_environment
+      debug:
+        var: check_project_delete_environment

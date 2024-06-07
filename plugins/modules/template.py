@@ -297,7 +297,8 @@ def main():
           is_stable=dict(type='bool', required=False),
           description=dict(type='str', required=False),
           comments=dict(type='str', required=False),
-          tags=dict(type='dict', required=False)
+          tags=dict(type='dict', required=False),
+          version=dict(type='str', required=False),
       ),
       supports_check_mode = True
     )
@@ -356,12 +357,26 @@ def main():
     else:
       module.object_scope = 'account'
 
-    # Pull the version label from the provided template_yaml.
-    template_yaml_str = module.params['template_yaml']
-    template_yaml = safe_load(template_yaml_str)
-    if 'template' not in template_yaml.keys() or 'versionLabel' not in template_yaml['template'].keys():
-      module.fail_json(msg='Provided template_yaml must contain a top level template with a child versionLabel.')
-    version_label = template_yaml['template']['versionLabel']
+    # Need to probably clean this up, but figure out the version_label either from the module params or the template_yaml.
+    if module.params['state'] == 'present':
+      # Pull the version label from the provided template_yaml.
+      template_yaml_str = module.params['template_yaml']
+      template_yaml = safe_load(template_yaml_str)
+      if 'template' not in template_yaml.keys() or 'versionLabel' not in template_yaml['template'].keys():
+        module.fail_json(msg='Provided template_yaml must contain a top level template with a child versionLabel.')
+      version_label = template_yaml['template']['versionLabel']
+    else:
+      version = module.params['version']
+      if version:
+        version_label = version
+      else:
+        template_yaml_str = module.params['template_yaml']
+        if not version and not template_yaml_str:
+          module.fail_json('When deleting a template, you must still provide the template_yaml with a versionLabel field, or provide version to the module.')
+        template_yaml = safe_load(template_yaml_str)
+        if 'template' not in template_yaml.keys() or 'versionLabel' not in template_yaml['template'].keys():
+          module.fail_json(msg='Provided template_yaml must contain a top level template with a child versionLabel.')
+        version_label = template_yaml['template']['versionLabel']
 
     # Prepare the Harness API URLs for this module.
     if module.object_scope == 'account':

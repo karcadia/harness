@@ -1,0 +1,212 @@
+# Account
+    - name: Create account-level template (check)
+      karcadia.harness.template:
+        state: present
+        id: demo_account_template
+        description: demo description
+        template_yaml: "{{ lookup('file', 'template_account_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      check_mode: True
+      register: check_account_create_template
+
+    - name: debug check_account_create_template
+      debug:
+        var: check_account_create_template
+
+    - name: Create account-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_account_template
+        description: demo description
+        template_yaml: "{{ lookup('file', 'template_account_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: create_account_template
+
+    - name: debug create_account_template
+      debug:
+        var: create_account_template
+
+    - name: Delete account-level template (check)
+      karcadia.harness.template:
+        state: absent
+        id: demo_account_template
+        version: v1
+      check_mode: True
+      register: check_account_delete_template
+
+    - name: debug check_account_delete_template
+      debug:
+        var: check_account_delete_template
+
+    - name: Delete account-level template
+      karcadia.harness.template:
+        state: absent
+        id: demo_account_template
+        version: v1
+      register: account_delete_template
+
+    - name: debug account_delete_template
+      debug:
+        var: account_delete_template
+
+# Org
+    - name: Create org-level template (check)
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      check_mode: True
+      register: check_org_create_template
+
+    - name: debug check_org_create_template
+      debug:
+        var: check_org_create_template
+
+    - name: Create org-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: create_org_template
+
+    - name: debug create_org_template
+      debug:
+        var: create_org_template
+
+    - name: Re-enforce same org-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: re_create_org_template
+
+    - name: debug re_create_org_template
+      debug:
+        var: re_create_org_template
+
+    - name: Update org-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        template_yaml: "{{ lookup('file', 'template_org_pipeline_deploy_changed.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+        tags:
+          builtby: harness-iac
+      register: update_org_template
+
+    - name: debug update_org_template
+      debug:
+        var: update_org_template
+
+    - name: Delete org-level template (check)
+      karcadia.harness.template:
+        state: absent
+        id: demo_org_template
+        org: default
+        version: v1
+      check_mode: True
+      register: check_org_delete_template
+
+    - name: debug check_org_delete_template
+      debug:
+        var: check_org_delete_template
+
+    - name: Delete org-level template
+      karcadia.harness.template:
+        state: absent
+        id: demo_org_template
+        org: default
+        version: v1
+      register: org_delete_template
+
+    - name: debug org_delete_template
+      debug:
+        var: org_delete_template
+
+# Project
+    - name: Create project-level template (check)
+      karcadia.harness.template:
+        state: present
+        id: demo_org_template
+        org: default
+        project: demo_project
+        template_yaml: "{{ lookup('file', 'template_project_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      check_mode: True
+      register: check_project_create_template
+
+    - name: debug check_project_create_template
+      debug:
+        var: check_project_create_template
+
+    - name: Create project-level template
+      karcadia.harness.template:
+        state: present
+        id: demo_project_template
+        org: default
+        project: demo_project
+        template_yaml: "{{ lookup('file', 'template_project_pipeline_deploy.yaml') }}"
+        git_details:
+          store_type: INLINE
+        is_stable: False
+        comments: Demo comment.
+      register: create_project_template
+
+    - name: debug create_project_template
+      debug:
+        var: create_project_template
+
+    - name: Delete project-level template (check)
+      karcadia.harness.template:
+        state: absent
+        id: demo_project_template
+        org: default
+        project: demo_project
+        version: v1
+      check_mode: True
+      register: check_project_delete_template
+
+    - name: debug check_project_delete_template
+      debug:
+        var: check_project_delete_template
+
+    - name: Delete project-level template
+      karcadia.harness.template:
+        state: absent
+        id: demo_project_template
+        org: default
+        project: demo_project
+        version: v1
+      register: project_delete_template
+
+    - name: debug project_delete_template
+      debug:
+        var: project_delete_template
