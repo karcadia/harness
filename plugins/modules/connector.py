@@ -187,6 +187,8 @@ def ensure_present(module):
         del existing[module.object_type]['spec']['delegate_selectors']
       if 'execute_on_delegate' in existing[module.object_type]['spec'].keys() and 'execute_on_delegate' not in pre_json_object[module.object_type]['spec'].keys():
         del existing[module.object_type]['spec']['execute_on_delegate']
+      if 'proxy' in existing[module.object_type]['spec'].keys() and 'proxy' not in pre_json_object[module.object_type]['spec'].keys():
+        del existing[module.object_type]['spec']['proxy']
       if pre_json_object[module.object_type]['spec'] != existing[module.object_type]['spec']:
         needs_update = True
         component = 'spec'

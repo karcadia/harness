@@ -97,7 +97,7 @@ def backup_object(module):
 
     dest = module.params["dest"]
     if not dest:
-      dest = 'ansible_harness_project_backup_' + object_id + '.tar.gz'
+      dest = 'ansible_harness_project_backup_' + org_id + '_' + object_id + '.tar.gz'
 
     # Handle check mode by pretending we are done now.
     if module.check_mode:
