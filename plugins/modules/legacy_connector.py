@@ -209,6 +209,18 @@ def ensure_present(module):
         and 'caCertRef' in existing[module.object_type]['spec']['credential']['spec']['auth']['spec'].keys() \
         and existing[module.object_type]['spec']['credential']['spec']['auth']['spec']['caCertRef'] is None:
           del existing[module.object_type]['spec']['credential']['spec']['auth']['spec']['caCertRef']
+      if 'ngCertificateRef' in existing[module.object_type]['spec'].keys() \
+        and not existing[module.object_type]['spec']['ngCertificateRef'] \
+        and 'ngCertificateRef' not in pre_json_object[module.object_type]['spec'].keys():
+          del existing[module.object_type]['spec']['ngCertificateRef']
+      if 'secretId' in existing[module.object_type]['spec'].keys() \
+        and not existing[module.object_type]['spec']['secretId'] \
+        and 'secretId' not in pre_json_object[module.object_type]['spec'].keys():
+          del existing[module.object_type]['spec']['secretId']
+      if 'xvaultAwsIamServerId' in existing[module.object_type]['spec'].keys() \
+        and not existing[module.object_type]['spec']['xvaultAwsIamServerId'] \
+        and 'xvaultAwsIamServerId' not in pre_json_object[module.object_type]['spec'].keys():
+          del existing[module.object_type]['spec']['xvaultAwsIamServerId']
       # Now compare the requested spec with the sanitized existing spec.
       if pre_json_object[module.object_type]['spec'] != existing[module.object_type]['spec']:
         needs_update = True
