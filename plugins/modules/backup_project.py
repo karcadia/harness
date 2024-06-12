@@ -194,7 +194,8 @@ def fetch_services(module, org_id, object_id):
   for service_dict in service_list:
     service = service_dict['service']
     service_id = service['identifier']
-    mkdir(module.work_dir + '/services/' + service_id)
+    if not isdir(module.work_dir + '/services/' + service_id):
+      mkdir(module.work_dir + '/services/' + service_id)
     service_filename = module.work_dir + '/services/' + service_id + '/' + service_id + '.yaml'
     with open(service_filename, 'w') as file_writer:
       file_writer.write(service['yaml'])
