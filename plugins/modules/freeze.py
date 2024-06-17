@@ -7,44 +7,33 @@
 DOCUMENTATION = r"""
 ---
 module: environment
-version_added: 0.2.4
-short_description: Manage Harness Environment
+version_added: 0.2.8
+short_description: Manage Harness Freeze 
 description:
-  - Manage Harness Environments.
+  - Manage Harness Deployment Freezes.
 author:
   - Justin McCormick (@karcadia)
 options:
   identifier:
-    description: Identifier of the Harness Environment.
+    description: Identifier of the Harness Freeze. 
     required: False
     type: str
   org:
-    description: Identifier of the Harness Organization to which the Environment will belong.
+    description: Identifier of the Harness Organization to which the Freeze will belong.
     required: False
     type: str
   project:
-    description: Identifier of the Harness Organization to which the Environment will belong.
+    description: Identifier of the Harness Organization to which the Freeze will belong.
     required: False
     type: str
   state:
-    description: Desired state of the Harness Environment.
+    description: Desired state of the Harness Freeze.
     choices:
       - absent
       - present
     default: present
     type: str
-  name:
-    description: Name of the Harness Environment.
-    required: False
-    type: str
-  tags:
-    description: A dictionary of tags to add the Harness Environment.
-    type: dict
-  description:
-    description: A description to apply to the Harness Environment.
-    required: False
-    type: str
-  spec:
+  yaml:
     description: 
     required: 
     type: 
@@ -53,30 +42,29 @@ options:
 EXAMPLES = r"""
 # Note: These examples do not set authentication details.
 
-- name: Create a Harness Environment.
-  karcadia.harness.environment:
-    identifier: demo_environment
+- name: Create a Harness Freeze.
+  karcadia.harness.freeze:
+    identifier: demo_freeze
     org: my_demo_org
 
-- name: Create a Harness Environment.
-  karcadia.harness.environment:
-    identifier: my_demo_environment
+- name: Create a Harness Freeze.
+  karcadia.harness.freeze:
+    identifier: my_demo_freeze
     org: my_demo_org
-    name: my-demo-environment
-    description: The Environment used for a Demo.
     state: present
-    tags:
-      purpose: demo
+    yaml:
+      freeze:
+        something: something
 
-- name: Delete a Harness Environment.
-  karcadia.harness.environment:
-    identifier: demo_environment
+- name: Delete a Harness Freeze.
+  karcadia.harness.freeze:
+    identifier: demo_freeze
     org: my_demo_org
     state: absent
 """
 
 RETURN = r"""
-environment:
+freeze:
   description: The environment structure that was created.
   returned: when state is present
   type: dict
@@ -117,16 +105,12 @@ def ensure_present(module):
     object_name = module.params["name"]
     org_id      = module.params["org"]
     project_id  = module.params["project"]
-    env_type    = module.params["type"]
+    freeze_yaml = module.params["yaml"]
 
     # Use the same name as ID if name was not provided.
     if not object_name:
       object_name = object_id
-
-    # Default to PreProduction as env_type if user did not provide one.
-    if not env_type:
-      env_type = 'PreProduction'
-    
+   
     # Start with some assumptions.
     checked_and_absent = False
     checked_and_present = False
@@ -149,9 +133,9 @@ def ensure_present(module):
 
     # Prepare the object with the required fields.
     pre_json_object = {
-      "identifier": object_id,
+      "freezeIdentifier": object_id,
       "name": object_name,
-      "type": env_type,
+      "yaml": freeze_yaml,
     }
 
     # Attach the org and project IDs as needed.
@@ -162,14 +146,14 @@ def ensure_present(module):
       pre_json_object['orgIdentifier'] = org_id
 
     # Add anything additional that was provided.
-    if 'description' in module.params.keys():
-      pre_json_object['description'] = module.params['description']
-    if 'tags' in module.params.keys():
-      pre_json_object['tags'] = module.params['tags']
-    if 'color' in module.params.keys():
-      pre_json_object['color'] = module.params['color']
-    if 'yaml' in module.params.keys():
-      pre_json_object['yaml'] = module.params['yaml']
+    # if 'description' in module.params.keys():
+    #   pre_json_object['description'] = module.params['description']
+    # if 'tags' in module.params.keys():
+    #   pre_json_object['tags'] = module.params['tags']
+    # if 'color' in module.params.keys():
+    #   pre_json_object['color'] = module.params['color']
+    # if 'yaml' in module.params.keys():
+    #   pre_json_object['yaml'] = module.params['yaml']
 
     if checked_and_present:
       # Determine if the existing object needs to be updated.
@@ -301,17 +285,13 @@ def main():
           state=dict(type='str', required=False, choices=['present', 'absent'], default='present'),
           api_key=dict(type='str', required=False),
           account_id=dict(type='str', required=False),
-          description=dict(type='str', required=False, aliases=['desc']),
-          type=dict(type='str', required=True),
-          color=dict(type='str', required=False),
-          tags=dict(type='dict', required=False),
           yaml=dict(type='str', required=False),
       ),
       supports_check_mode = True
     )
 
     # Set the object type for this module.
-    module.object_type = 'environment'
+    module.object_type = 'freeze'
     module.object_title = module.object_type.title()
 
     # Catch and fail when we were given an ID with a dash in it.
@@ -365,8 +345,8 @@ def main():
       module.object_scope = 'account'
 
     # Prepare the Harness API URLs for this module.
-    module.push_url = f'https://app.harness.io/ng/api/environmentsV2?accountIdentifier={module.account_id}'
-    module.read_url = f'https://app.harness.io/ng/api/environmentsV2/{object_id}?accountIdentifier={module.account_id}&deleted=false'
+    module.push_url = f'https://app.harness.io/ng/api/{module.object_type}?accountIdentifier={module.account_id}'
+    module.read_url = f'https://app.harness.io/ng/api/{module.object_type}/{object_id}?accountIdentifier={module.account_id}'
     if module.object_scope == 'org':
       module.read_url += f'&orgIdentifier={org_id}'
     elif module.object_scope == 'project':
