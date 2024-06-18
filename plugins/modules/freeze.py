@@ -6,8 +6,8 @@
 
 DOCUMENTATION = r"""
 ---
-module: environment
-version_added: 0.2.8
+module: freeze
+version_added: 0.3.4
 short_description: Manage Harness Freeze 
 description:
   - Manage Harness Deployment Freezes.
@@ -65,27 +65,27 @@ EXAMPLES = r"""
 
 RETURN = r"""
 freeze:
-  description: The environment structure that was created.
+  description: The freeze structure that was created.
   returned: when state is present
   type: dict
   suboptions:
     description:
-      description: The description applied to the Harness Environment.
+      description: The description applied to the Harness Freeze.
       type: str
     identifier:
-      description: Identifier of the Harness Environment.
+      description: Identifier of the Harness Freeze.
       type: str
     name:
-      description: Name of the Harness Environment.
+      description: Name of the Harness Freeze.
       type: str
     org:
-      description: Identifier of the Harness Organization to which the Environment belongs.
+      description: Identifier of the Harness Organization to which the Freeze belongs.
       type: str
     project:
-      description: Identifier of the Harness Project to which the Environment belongs.
+      description: Identifier of the Harness Project to which the Freeze belongs.
       type: str
     tags:
-      description: A dictionary of tags attached to the Harness Environment.
+      description: A dictionary of tags attached to the Harness Freeze.
       type: dict
 """
 
@@ -133,60 +133,68 @@ def ensure_present(module):
 
     # Prepare the object with the required fields.
     pre_json_object = {
-      "freezeIdentifier": object_id,
-      "name": object_name,
-      "yaml": freeze_yaml,
+      module.object_type: {
+        "identifier": object_id,
+        "name": object_name,
+        "status": module.params["status"],
+        "windows": module.params["windows"],
+        "entityConfigs": module.params["entity_configs"],
+        "yaml": freeze_yaml,
+      }
     }
 
     # Attach the org and project IDs as needed.
     if module.object_scope == 'project':
-      pre_json_object['orgIdentifier'] = org_id
-      pre_json_object['projectIdentifier'] = project_id
+      pre_json_object[module.object_type]['orgIdentifier'] = org_id
+      pre_json_object[module.object_type]['projectIdentifier'] = project_id
     elif module.object_scope == 'org':
-      pre_json_object['orgIdentifier'] = org_id
+      pre_json_object[module.object_type]['orgIdentifier'] = org_id
 
     # Add anything additional that was provided.
-    # if 'description' in module.params.keys():
-    #   pre_json_object['description'] = module.params['description']
-    # if 'tags' in module.params.keys():
-    #   pre_json_object['tags'] = module.params['tags']
-    # if 'color' in module.params.keys():
-    #   pre_json_object['color'] = module.params['color']
-    # if 'yaml' in module.params.keys():
-    #   pre_json_object['yaml'] = module.params['yaml']
+    if 'description' in module.params.keys():
+      pre_json_object[module.object_type]['description'] = module.params['description']
+    if 'tags' in module.params.keys():
+      pre_json_object[module.object_type]['tags'] = module.params['tags']
+    if 'yaml' in module.params.keys():
+      pre_json_object[module.object_type]['yaml'] = module.params['yaml']
 
     if checked_and_present:
       # Determine if the existing object needs to be updated.
-      existing = loads(harness_response.text)['data'][module.object_type]
+      existing_yaml = loads(harness_response.text)['data']['yaml']
+      existing = loads(existing_yaml)['freeze']
       needs_update = False
-      if pre_json_object['description'] \
-        and pre_json_object['description'] != existing['description']:
+      if pre_json_object[module.object_type]['description'] \
+        and pre_json_object[module.object_type]['description'] != existing['description']:
           needs_update = True
           component = 'description'
-      if pre_json_object['tags'] \
-        and pre_json_object['tags'] != existing['tags']:
+      if pre_json_object[module.object_type]['tags'] \
+        and pre_json_object[module.object_type]['tags'] != existing['tags']:
           needs_update = True
           component = 'tags'
-      if pre_json_object['color'] \
-        and pre_json_object['color'] != existing['color']:
+      if pre_json_object[module.object_type]['status'] \
+        and pre_json_object[module.object_type]['status'] != existing['status']:
           needs_update = True
-          component = 'color'
-      if pre_json_object['yaml'] \
-        and pre_json_object['yaml'] != existing['yaml']:
+          component = 'status'
+      if pre_json_object[module.object_type]['windows'] \
+        and pre_json_object[module.object_type]['windows'] != existing['windows']:
+          needs_update = True
+          component = 'windows'
+      if pre_json_object[module.object_type]['yaml'] \
+        and pre_json_object[module.object_type]['yaml'] != existing['yaml']:
           needs_update = True
           component = 'yaml'
-      if pre_json_object['name'] != existing['name']:
+      if pre_json_object[module.object_type]['name'] != existing['name']:
         needs_update = True
         component = 'name'
       
       # Stop here if no updates are needed. Otherwise we'll use a PUT method to update the existing object.
       if needs_update:
         method = 'PUT'
-        url = module.push_url
+        url = module.read_url
         if module.check_mode:
           # Return success with the object that we would have created.
           module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True,
-                           environment=pre_json_object, updated=True, component_triggering_update=component)
+                           freeze=pre_json_object, updated=True, component_triggering_update=component)
       else:
         module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already present and in the desired state.')
 
@@ -194,7 +202,7 @@ def ensure_present(module):
       if module.check_mode:
         # Return success with the object that we would have created.
         module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.',
-                         check_mode=True, environment=pre_json_object)
+                         check_mode=True, freeze=pre_json_object)
 
       # We will use a POST method to create the missing object.
       method = 'POST'
@@ -209,11 +217,11 @@ def ensure_present(module):
       object_resp_dict = loads(create_object_resp.text)
       if method == 'POST':
         actioned = 'created'
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', environment=object_resp_dict)
+        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', freeze=object_resp_dict)
       if method == 'PUT':
         actioned = 'updated'
         module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.',
-                        environment=object_resp_dict, updated=True, component_triggering_update=component)
+                        freeze=object_resp_dict, updated=True, component_triggering_update=component)
     else:
       # Try to extract the status_code to return with our failure.
       status_code = str(create_object_resp.status_code)
@@ -285,6 +293,11 @@ def main():
           state=dict(type='str', required=False, choices=['present', 'absent'], default='present'),
           api_key=dict(type='str', required=False),
           account_id=dict(type='str', required=False),
+          description=dict(type='str', required=False),
+          tags=dict(type='dict', required=False),
+          status=dict(type='str', required=True, choices=['Disabled', 'Enabled']),
+          windows=dict(type='list', required=True),
+          entity_configs=dict(type='list', required=True),
           yaml=dict(type='str', required=False),
       ),
       supports_check_mode = True
