@@ -96,6 +96,8 @@ from ansible.module_utils.basic import AnsibleModule
 from os import getenv
 from json import dumps, loads
 from yaml import safe_load
+from copy import deepcopy
+from difflib import unified_diff
 
 # External Imports
 from requests import request
@@ -106,7 +108,6 @@ def ensure_present(module):
     object_name = module.params["name"]
     org_id      = module.params["org"]
     project_id  = module.params["project"]
-    freeze_yaml = module.params["yaml"]
 
     # Use the same name as ID if name was not provided.
     if not object_name:
@@ -131,7 +132,7 @@ def ensure_present(module):
         module.fail_json(msg=harness_response_code)
     else:
       module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct.')
-
+   
     # Prepare the object with the required fields.
     pre_json_object = {
       module.object_type: {
@@ -140,7 +141,6 @@ def ensure_present(module):
         "status": module.params["status"],
         "windows": module.params["windows"],
         "entityConfigs": module.params["entity_configs"],
-        "yaml": freeze_yaml,
       }
     }
 
@@ -156,16 +156,19 @@ def ensure_present(module):
       pre_json_object[module.object_type]['description'] = module.params['description']
     if 'tags' in module.params.keys():
       pre_json_object[module.object_type]['tags'] = module.params['tags']
-    if 'yaml' in module.params.keys():
-      pre_json_object[module.object_type]['yaml'] = module.params['yaml']
+
+    # The Harness API expects these items to be provided again as part of the yaml.
+    pre_json_object[module.object_type]['yaml'] = deepcopy(pre_json_object)
 
     if checked_and_present:
       # Determine if the existing object needs to be updated.
       existing_yaml = loads(harness_response.text)['data']['yaml']
       existing = safe_load(existing_yaml)['freeze']
       needs_update = False
-      if pre_json_object[module.object_type]['description'] \
-        and pre_json_object[module.object_type]['description'] != existing['description']:
+      if pre_json_object[module.object_type]['description']:
+        if 'description' not in existing.keys():
+          existing['description'] = ''
+        if pre_json_object[module.object_type]['description'] != existing['description']:
           needs_update = True
           component = 'description'
       if pre_json_object[module.object_type]['tags']:
@@ -192,13 +195,19 @@ def ensure_present(module):
         needs_update = True
         component = 'name'
       
+      # Prepare the diff to return later.
+      old_str = dumps(existing, indent=2, sort_keys=True).splitlines()
+      new_str = dumps(pre_json_object, indent=2, sort_keys=True).splitlines()
+      diff_gen = unified_diff(old_str, new_str)
+      diff = '\n'.join(diff_gen)
+
       # Stop here if no updates are needed. Otherwise we'll use a PUT method to update the existing object.
       if needs_update:
         method = 'PUT'
         url = module.read_url
         if module.check_mode:
           # Return success with the object that we would have created.
-          module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True,
+          module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True, diff=diff,
                            freeze=pre_json_object, updated=True, component_triggering_update=component)
       else:
         module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already present and in the desired state.')
@@ -207,7 +216,7 @@ def ensure_present(module):
       if module.check_mode:
         # Return success with the object that we would have created.
         module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.',
-                         check_mode=True, freeze=pre_json_object)
+                         check_mode=True, freeze=pre_json_object, diff=diff)
 
       # We will use a POST method to create the missing object.
       method = 'POST'
@@ -225,7 +234,7 @@ def ensure_present(module):
         module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', freeze=object_resp_dict)
       if method == 'PUT':
         actioned = 'updated'
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.',
+        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', diff=diff,
                         freeze=object_resp_dict, updated=True, component_triggering_update=component)
     else:
       # Try to extract the status_code to return with our failure.
@@ -291,21 +300,23 @@ def main():
     # Initialize the module and specify the argument spec.
     module = AnsibleModule(
       argument_spec = dict(
-          name=dict(type='str', required=False),
+          name=dict(type='str'),
           identifier=dict(type='str', required=True, aliases=['id', 'env_id']),
-          org=dict(type='str', required=False, aliases=['org_id']),
-          project=dict(type='str', required=False, aliases=['project_id']),
-          state=dict(type='str', required=False, choices=['present', 'absent'], default='present'),
-          api_key=dict(type='str', required=False),
-          account_id=dict(type='str', required=False),
-          description=dict(type='str', required=False),
-          tags=dict(type='dict', required=False),
-          status=dict(type='str', required=True, choices=['Disabled', 'Enabled']),
-          windows=dict(type='list', required=True),
-          entity_configs=dict(type='list', required=True),
-          yaml=dict(type='str', required=False),
+          org=dict(type='str', aliases=['org_id']),
+          project=dict(type='str', aliases=['project_id']),
+          state=dict(type='str', choices=['present', 'absent'], default='present'),
+          api_key=dict(type='str'),
+          account_id=dict(type='str'),
+          description=dict(type='str'),
+          tags=dict(type='dict'),
+          status=dict(type='str', choices=['Disabled', 'Enabled']),
+          windows=dict(type='list'),
+          entity_configs=dict(type='list'),
       ),
-      supports_check_mode = True
+      supports_check_mode = True,
+      required_if=[
+        ('state', 'present', ('status', 'windows', 'entity_configs'), True),
+      ]
     )
 
     # Set the object type for this module.
