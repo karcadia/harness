@@ -7,7 +7,7 @@
 DOCUMENTATION = r"""
 ---
 module: freeze
-version_added: 0.3.4
+version_added: 0.3.6
 short_description: Manage Harness Freeze 
 description:
   - Manage Harness Deployment Freezes.
@@ -95,6 +95,7 @@ from ansible.module_utils.basic import AnsibleModule
 # Stdlib Imports
 from os import getenv
 from json import dumps, loads
+from yaml import safe_load
 
 # External Imports
 from requests import request
@@ -161,14 +162,16 @@ def ensure_present(module):
     if checked_and_present:
       # Determine if the existing object needs to be updated.
       existing_yaml = loads(harness_response.text)['data']['yaml']
-      existing = loads(existing_yaml)['freeze']
+      existing = safe_load(existing_yaml)['freeze']
       needs_update = False
       if pre_json_object[module.object_type]['description'] \
         and pre_json_object[module.object_type]['description'] != existing['description']:
           needs_update = True
           component = 'description'
-      if pre_json_object[module.object_type]['tags'] \
-        and pre_json_object[module.object_type]['tags'] != existing['tags']:
+      if pre_json_object[module.object_type]['tags']:
+        if 'tags' not in existing.keys():
+          existing['tags'] = {}
+        if pre_json_object[module.object_type]['tags'] != existing['tags']:
           needs_update = True
           component = 'tags'
       if pre_json_object[module.object_type]['status'] \
@@ -179,8 +182,10 @@ def ensure_present(module):
         and pre_json_object[module.object_type]['windows'] != existing['windows']:
           needs_update = True
           component = 'windows'
-      if pre_json_object[module.object_type]['yaml'] \
-        and pre_json_object[module.object_type]['yaml'] != existing['yaml']:
+      if pre_json_object[module.object_type]['yaml']:
+        if 'yaml' not in existing.keys():
+          existing['yaml'] = ''
+        if pre_json_object[module.object_type]['yaml'] != existing['yaml']:
           needs_update = True
           component = 'yaml'
       if pre_json_object[module.object_type]['name'] != existing['name']:
@@ -362,8 +367,10 @@ def main():
     module.read_url = f'https://app.harness.io/ng/api/{module.object_type}/{object_id}?accountIdentifier={module.account_id}'
     if module.object_scope == 'org':
       module.read_url += f'&orgIdentifier={org_id}'
+      module.push_url += f'&orgIdentifier={org_id}'
     elif module.object_scope == 'project':
       module.read_url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}'
+      module.push_url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}'
 
     # Run the appropriate function based on the state requested.
     state = module.params['state']
