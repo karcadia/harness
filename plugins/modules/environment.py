@@ -122,10 +122,6 @@ def ensure_present(module):
     # Use the same name as ID if name was not provided.
     if not object_name:
       object_name = object_id
-
-    # Default to PreProduction as env_type if user did not provide one.
-    if not env_type:
-      env_type = 'PreProduction'
     
     # Start with some assumptions.
     checked_and_absent = False
@@ -225,11 +221,16 @@ def ensure_present(module):
       object_resp_dict = loads(create_object_resp.text)
       if method == 'POST':
         actioned = 'created'
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', environment=object_resp_dict)
+        msg = f'{module.object_title} {object_id} has been {actioned}.'
+        module.exit_json(changed=True, msg=msg, environment=object_resp_dict)
       if method == 'PUT':
         actioned = 'updated'
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.',
-                        environment=object_resp_dict, updated=True, component_triggering_update=component)
+        msg = f'{module.object_title} {object_id} has been {actioned}.'
+        diff = {
+          'before': existing,
+          'after': pre_json_object
+        }
+        module.exit_json(changed=True, msg=msg, diff=diff, environment=object_resp_dict, component_triggering_update=component)
     else:
       # Try to extract the status_code to return with our failure.
       status_code = str(create_object_resp.status_code)
@@ -294,20 +295,23 @@ def main():
     # Initialize the module and specify the argument spec.
     module = AnsibleModule(
       argument_spec = dict(
-          name=dict(type='str', required=False),
+          name=dict(type='str'),
           identifier=dict(type='str', required=True, aliases=['id', 'env_id']),
-          org=dict(type='str', required=False, aliases=['org_id']),
-          project=dict(type='str', required=False, aliases=['project_id']),
-          state=dict(type='str', required=False, choices=['present', 'absent'], default='present'),
-          api_key=dict(type='str', required=False),
-          account_id=dict(type='str', required=False),
-          description=dict(type='str', required=False, aliases=['desc']),
-          type=dict(type='str', required=True),
-          color=dict(type='str', required=False),
-          tags=dict(type='dict', required=False),
-          yaml=dict(type='str', required=False),
+          org=dict(type='str', aliases=['org_id']),
+          project=dict(type='str', aliases=['project_id']),
+          state=dict(type='str', choices=['present', 'absent'], default='present'),
+          api_key=dict(type='str'),
+          account_id=dict(type='str'),
+          description=dict(type='str', aliases=['desc']),
+          type=dict(type='str'),
+          color=dict(type='str'),
+          tags=dict(type='dict'),
+          yaml=dict(type='str'),
       ),
-      supports_check_mode = True
+      supports_check_mode = True,
+      required_if = [
+        ('state', 'present', ('type',))
+      ]
     )
 
     # Set the object type for this module.

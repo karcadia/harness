@@ -116,12 +116,6 @@ def ensure_present(module):
     spec        = module.params["spec"]
     object_type = module.params["type"]
 
-    # Ensure all required parameters for a create were provided.
-    if not spec:
-      module.fail_json(msg='The spec parameter must be provided when state is present.')
-    if not type:
-      module.fail_json(msg='The type parameter must be provided when state is present.')
-
     # Use the same name as ID if name was not provided.
     if not object_name:
       object_name = object_id
@@ -258,7 +252,12 @@ def ensure_present(module):
         module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', connector=object_resp)
       elif method == 'PUT':
         actioned = 'updated'
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', connector=pre_json_object, updated=True, component_triggering_update=component)
+        msg = f'{module.object_title} {object_id} has been {actioned}.'
+        diff = {
+          'before': existing,
+          'after': pre_json_object
+        }
+        module.exit_json(changed=True, msg=msg, diff=diff, connector=pre_json_object, component_triggering_update=component)
       else:
         module.fail_json(msg='Unexpected method requested.')
     else:
@@ -325,19 +324,22 @@ def main():
     # Initialize the module and specify the argument spec.
     module = AnsibleModule(
       argument_spec = dict(
-          name=dict(type='str', required=False),
+          name=dict(type='str'),
           identifier=dict(type='str', required=True, aliases=['id', 'project_id']),
-          org=dict(type='str', required=False, aliases=['org_id']),
-          project=dict(type='str', required=False, aliases=['project_id']),
-          state=dict(type='str', required=False, choices=['present', 'absent'], default='present'),
-          api_key=dict(type='str', required=False),
-          account_id=dict(type='str', required=False),
-          description=dict(type='str', required=False, aliases=['desc']),
-          spec=dict(type='dict', required=False),
-          tags=dict(type='dict', required=False),
-          type=dict(type='str', required=False),
+          org=dict(type='str', aliases=['org_id']),
+          project=dict(type='str', aliases=['project_id']),
+          state=dict(type='str', choices=['present', 'absent'], default='present'),
+          api_key=dict(type='str'),
+          account_id=dict(type='str'),
+          description=dict(type='str', aliases=['desc']),
+          spec=dict(type='dict'),
+          tags=dict(type='dict'),
+          type=dict(type='str'),
       ),
-      supports_check_mode = True
+      supports_check_mode = True,
+      required_if = [
+        ('state', 'present', ('spec', 'type'))
+      ]
     )
 
     # Set the object type for this module.

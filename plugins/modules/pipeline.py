@@ -120,12 +120,6 @@ def ensure_present(module):
     pipeline_yaml = module.params["pipeline_yaml"]
     git_details   = module.params["git_details"]
 
-    # Ensure all required parameters for a create were provided.
-    if not pipeline_yaml:
-      module.fail_json(msg='The pipeline_yaml parameter must be provided when state is present.')
-    if not git_details:
-      module.fail_json(msg='The git_details parameter must be provided when state is present.')
-
     # Use the same name as ID if name was not provided.
     if not object_name:
       object_name = object_id
@@ -206,9 +200,14 @@ def ensure_present(module):
     # Interpret the API response.
     if create_object_resp.status_code == 200:
       actioned = 'updated'
+      msg = f'{module.object_title} {object_id} has been {actioned}.'
+      diff = {
+        'before': existing,
+        'after': pre_json_object
+      }
       # Extract the object returned from the Harness API and return it with our successful module exit.
       object_resp_dict = loads(create_object_resp.text)
-      module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', pipeline=object_resp_dict, updated=True, component_triggering_update=component)
+      module.exit_json(changed=True, msg=msg, diff=diff, pipeline=object_resp_dict, component_triggering_update=component)
     elif create_object_resp.status_code == 201:
       actioned = 'created'
       # Extract the object returned from the Harness API and return it with our successful module exit.
@@ -290,7 +289,10 @@ def main():
           git_details=dict(type='dict', required=False),
           tags=dict(type='dict', required=False),
       ),
-      supports_check_mode = True
+      supports_check_mode = True,
+      required_if = [
+        ('state', 'present', ('pipeline_yaml', 'git_details'))
+      ]
     )
 
     # Set the object type for this module.

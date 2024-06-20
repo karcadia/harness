@@ -5,11 +5,11 @@
 #    HARNESS_ACCOUNT_ID: abc123
 #    HARNESS_API_KEY: abc123
   vars:
-    secrets: False
-    connectors: False
-    templates: False
-    pipelines: False
-    services: False
+    secrets: True
+    connectors: True
+    templates: True
+    pipelines: True
+    services: True
     environments: True
     roles: False
   tasks:

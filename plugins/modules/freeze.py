@@ -97,7 +97,6 @@ from os import getenv
 from json import dumps, loads
 from yaml import safe_load
 from copy import deepcopy
-from difflib import unified_diff
 
 # External Imports
 from requests import request
@@ -194,12 +193,6 @@ def ensure_present(module):
       if pre_json_object[module.object_type]['name'] != existing['name']:
         needs_update = True
         component = 'name'
-      
-      # Prepare the diff to return later.
-      old_str = dumps(existing, indent=2, sort_keys=True).splitlines()
-      new_str = dumps(pre_json_object, indent=2, sort_keys=True).splitlines()
-      diff_gen = unified_diff(old_str, new_str)
-      diff = '\n'.join(diff_gen)
 
       # Stop here if no updates are needed. Otherwise we'll use a PUT method to update the existing object.
       if needs_update:
@@ -231,11 +224,16 @@ def ensure_present(module):
       object_resp_dict = loads(create_object_resp.text)
       if method == 'POST':
         actioned = 'created'
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', freeze=object_resp_dict)
+        msg = f'{module.object_title} {object_id} has been {actioned}.'
+        module.exit_json(changed=True, msg=msg, freeze=object_resp_dict)
       if method == 'PUT':
         actioned = 'updated'
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', diff=diff,
-                        freeze=object_resp_dict, updated=True, component_triggering_update=component)
+        msg = f'{module.object_title} {object_id} has been {actioned}.'
+        diff = {
+          'before': existing,
+          'after': pre_json_object[module.object_type]
+        }
+        module.exit_json(changed=True, msg=msg, diff=diff, freeze=object_resp_dict, component_triggering_update=component)
     else:
       # Try to extract the status_code to return with our failure.
       status_code = str(create_object_resp.status_code)
