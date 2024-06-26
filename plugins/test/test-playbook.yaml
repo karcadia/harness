@@ -1,18 +1,18 @@
 ---
 - name: play
   hosts: localhost
-#  environment:
-#    HARNESS_ACCOUNT_ID: abc123
-#    HARNESS_API_KEY: abc123
   vars:
-    secrets: True
-    connectors: True
-    templates: True
-    pipelines: True
-    services: True
+    secrets: False
+    connectors: False
+    templates: False
+    pipelines: False
+    services: False
     environments: True
+    env_groups: True
+    # Licensed features
     roles: False
   tasks:
+# Licensed feature so not everyone can test this. 
 #    - name: create org
 #      karcadia.harness.org:
 #        state: present
@@ -39,6 +39,7 @@
         id: demo_project
         org: default
         description: demo description
+# If we need to test providing the authentication directly to the module.
 #        account_id: abc123
 #        api_key: abc123
         tags:
@@ -50,6 +51,7 @@
       debug:
         var: create_project
 
+# Move to import that can be toggled.
 # Backup Project
     # - name: backup project (check)
     #   karcadia.harness.backup_project:
@@ -91,6 +93,10 @@
     - name: Environments
       include_tasks: tasks/environments.yaml
       when: environments
+
+    - name: Environment Groups
+      include_tasks: tasks/env_groups.yaml
+      when: env_groups
 
 ## Begin pipelines
 # Pipelines are project-level only.
@@ -290,6 +296,7 @@
         var: org_delete_secret
       when: secrets
 
+# Licensed feature
 #    - name: delete org
 #      karcadia.harness.org:
 #        state: absent

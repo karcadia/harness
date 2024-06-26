@@ -1,0 +1,200 @@
+# Account
+    - name: Create account-level env_group group (check)
+      karcadia.harness.env_group:
+        state: present
+        id: demo_account_env_group
+        tags:
+          builtby: harness-iac
+        yaml:
+          name: demo_account_env_group
+          identifier: demo_account_env_group
+          description: An environment group used for a demo.
+          tags:
+            builtby: harness-iac
+
+      check_mode: True
+      register: check_account_create_env_group
+
+    - name: debug check_account_create_env_group
+      debug:
+        var: check_account_create_env_group
+
+    - name: Create account-level env_group
+      karcadia.harness.env_group:
+        state: present
+        id: demo_account_env_group
+        tags:
+          builtby: harness-iac
+        yaml:
+          environmentGroup:
+            name: demo_account_env_group
+            identifier: demo_account_env_group
+            description: An environment group used for a demo.
+            tags:
+              builtby: harness-iac
+      register: create_account_env_group
+
+    - name: debug create_account_env_group
+      debug:
+        var: create_account_env_group
+
+    - name: Delete account-level env_group (check)
+      karcadia.harness.env_group:
+        state: absent
+        id: demo_account_env_group
+      check_mode: True
+      register: check_account_delete_env_group
+
+    - name: debug check_account_delete_env_group
+      debug:
+        var: check_account_delete_env_group
+
+    - name: Delete account-level env_group
+      karcadia.harness.env_group:
+        state: absent
+        id: demo_account_env_group
+      register: account_delete_env_group
+
+    - name: debug account_delete_env_group
+      debug:
+        var: account_delete_env_group
+
+# Org        
+    - name: Create org-level env_group (check)
+      karcadia.harness.env_group:
+        state: present
+        id: demo_org_env_group
+        org: default
+        tags:
+          builtby: harness-iac
+        yaml:
+          environmentGroup:
+            name: demo_org_env_group
+            identifier: demo_org_env_group
+            orgIdentifier: default
+            description: An environment group used for a demo.
+            tags:
+              builtby: harness-iac
+      check_mode: True
+      register: check_org_create_env_group
+
+    - name: debug check_org_create_env_group
+      debug:
+        var: check_org_create_env_group
+
+    - name: Create org-level env_group
+      karcadia.harness.env_group:
+        state: present
+        id: demo_org_env_group
+        org: default
+        tags:
+          builtby: harness-iac
+        yaml:
+          environmentGroup:
+            name: demo_org_env_group
+            identifier: demo_org_env_group
+            orgIdentifier: default
+            description: An environment group used for a demo.
+            tags:
+              builtby: harness-iac
+      register: create_org_env_group
+
+    - name: debug create_org_env_group
+      debug:
+        var: create_org_env_group
+
+    - name: Delete org-level env_group (check)
+      karcadia.harness.env_group:
+        state: absent
+        id: demo_org_env_group
+        org: default
+      check_mode: True
+      register: check_org_delete_env_group
+
+    - name: debug check_org_delete_env_group
+      debug:
+        var: check_org_delete_env_group
+
+    - name: Delete org-level env_group
+      karcadia.harness.env_group:
+        state: absent
+        id: demo_org_env_group
+        org: default
+      register: org_delete_env_group
+
+    - name: debug org_delete_env_group
+      debug:
+        var: org_delete_env_group
+
+# Project
+    - name: Create project-level env_group (check)
+      karcadia.harness.env_group:
+        state: present
+        id: demo_project_env_group
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        yaml:
+          environmentGroup:
+            name: demo_project_env_group
+            identifier: demo_project_env_group
+            orgIdentifier: default
+            projectIdentifier: demo_project
+            description: An environment group used for a demo.
+            tags:
+              builtby: harness-iac
+      check_mode: True
+      register: check_project_create_env_group
+
+    - name: debug check_project_create_env_group
+      debug:
+        var: check_project_create_env_group
+
+    - name: Create project-level env_group
+      karcadia.harness.env_group:
+        state: present
+        id: demo_project_env_group
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        yaml:
+          environmentGroup:
+            name: demo_project_env_group
+            identifier: demo_project_env_group
+            orgIdentifier: default
+            projectIdentifier: demo_project
+            description: An environment group used for a demo.
+            tags:
+              builtby: harness-iac
+      register: create_project_env_group
+
+    - name: debug create_project_env_group
+      debug:
+        var: create_project_env_group
+
+    - name: Delete project-level env_group (check)
+      karcadia.harness.env_group:
+        state: absent
+        id: demo_env_group
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_env_group
+
+    - name: debug check_project_delete_env_group
+      debug:
+        var: check_project_delete_env_group
+
+    - name: Delete project-level env_group
+      karcadia.harness.env_group:
+        state: absent
+        id: demo_env_group
+        org: default
+        project: demo_project
+      register: project_delete_env_group
+
+    - name: debug project_delete_env_group
+      debug:
+        var: project_delete_env_group

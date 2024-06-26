@@ -18,5 +18,5 @@ This is reflected in the code, where the module code for most objects is identic
 The primary exceptions to this are the Org and Project modules, which differ a bit more due to their hierarchical nature.
 
 Requirements:
-Python 3.6+
-Python Requests Library
+- Python 3.6+
+- Python Requests Library

@@ -106,6 +106,19 @@
       debug:
         var: check_org_delete_environment
 
+    - name: Delete org-level environment
+      karcadia.harness.environment:
+        state: absent
+        id: demo_org_environment
+        org: default
+        tags:
+          builtby: harness-iac
+      register: org_delete_environment
+
+    - name: debug org_delete_environment
+      debug:
+        var: org_delete_environment
+
 # Project
     - name: Create project-level environment (check)
       karcadia.harness.environment:
@@ -152,3 +165,17 @@
     - name: debug check_project_delete_environment
       debug:
         var: check_project_delete_environment
+
+    - name: Delete project-level environment
+      karcadia.harness.environment:
+        state: absent
+        id: demo_environment
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+      register: project_delete_environment
+
+    - name: debug project_delete_environment
+      debug:
+        var: project_delete_environment

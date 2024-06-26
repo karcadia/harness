@@ -6,42 +6,42 @@
 
 DOCUMENTATION = r"""
 ---
-module: environment
-version_added: 0.2.4
-short_description: Manage Harness Environment
+module: env_group
+version_added: 0.4.8
+short_description: Manage Harness Environment Group
 description:
-  - Manage Harness Environments.
+  - Manage Harness Environment Groups.
 author:
   - Justin McCormick (@karcadia)
 options:
   identifier:
-    description: Identifier of the Harness Environment.
+    description: Identifier of the Harness Environment Group.
     required: False
     type: str
   org:
-    description: Identifier of the Harness Organization to which the Environment will belong.
+    description: Identifier of the Harness Organization to which the Environment Group will belong.
     required: False
     type: str
   project:
-    description: Identifier of the Harness Organization to which the Environment will belong.
+    description: Identifier of the Harness Organization to which the Environment Group will belong.
     required: False
     type: str
   state:
-    description: Desired state of the Harness Environment.
+    description: Desired state of the Harness Environment Group.
     choices:
       - absent
       - present
     default: present
     type: str
   name:
-    description: Name of the Harness Environment.
+    description: Name of the Harness Environment Group.
     required: False
     type: str
   tags:
-    description: A dictionary of tags to add the Harness Environment.
+    description: A dictionary of tags to add the Harness Environment Group.
     type: dict
   description:
-    description: A description to apply to the Harness Environment.
+    description: A description to apply to the Harness Environment Group.
     required: False
     type: str
   spec:
@@ -53,31 +53,31 @@ options:
 EXAMPLES = r"""
 # Note: These examples do not set authentication details.
 
-- name: Create a Harness Environment.
-  karcadia.harness.environment:
-    identifier: demo_environment
+- name: Create a Harness Environment Group.
+  karcadia.harness.env_group:
+    identifier: demo_environment_group
     org: my_demo_org
 
 - name: Create a Harness Environment.
-  karcadia.harness.environment:
-    identifier: my_demo_environment
+  karcadia.harness.env_group:
+    identifier: my_demo_environment_group
     org: my_demo_org
-    name: my-demo-environment
-    description: The Environment used for a Demo.
+    name: my-demo-environment-group
+    description: The Environment Group used for a Demo.
     state: present
     tags:
       purpose: demo
 
-- name: Delete a Harness Environment.
-  karcadia.harness.environment:
-    identifier: demo_environment
+- name: Delete a Harness Environment Group.
+  karcadia.harness.env_group:
+    identifier: demo_environment_group
     org: my_demo_org
     state: absent
 """
 
 RETURN = r"""
-environment:
-  description: The environment structure that was created.
+environmentGroup:
+  description: The environment group structure that was created.
   returned: when state is present
   type: dict
   suboptions:
@@ -117,7 +117,7 @@ def ensure_present(module):
     object_name = module.params["name"]
     org_id      = module.params["org"]
     project_id  = module.params["project"]
-    env_type    = module.params["type"]
+    object_yaml = module.params["yaml"]
 
     # Use the same name as ID if name was not provided.
     if not object_name:
@@ -147,7 +147,7 @@ def ensure_present(module):
     pre_json_object = {
       "identifier": object_id,
       "name": object_name,
-      "type": env_type,
+      "yaml": object_yaml,
     }
 
     # Attach the org and project IDs as needed.
@@ -158,23 +158,15 @@ def ensure_present(module):
       pre_json_object['orgIdentifier'] = org_id
 
     # Add anything additional that was provided.
-    if 'description' in module.params.keys():
-      pre_json_object['description'] = module.params['description']
     if 'tags' in module.params.keys():
       pre_json_object['tags'] = module.params['tags']
     if 'color' in module.params.keys():
       pre_json_object['color'] = module.params['color']
-    if 'yaml' in module.params.keys():
-      pre_json_object['yaml'] = module.params['yaml']
 
     if checked_and_present:
       # Determine if the existing object needs to be updated.
-      existing = loads(harness_response.text)['data'][module.object_type]
+      existing = loads(harness_response.text)['data']['envGroup']
       needs_update = False
-      if pre_json_object['description'] \
-        and pre_json_object['description'] != existing['description']:
-          needs_update = True
-          component = 'description'
       if pre_json_object['tags'] \
         and pre_json_object['tags'] != existing['tags']:
           needs_update = True
@@ -194,11 +186,11 @@ def ensure_present(module):
       # Stop here if no updates are needed. Otherwise we'll use a PUT method to update the existing object.
       if needs_update:
         method = 'PUT'
-        url = module.push_url
+        url = module.read_url
         if module.check_mode:
           # Return success with the object that we would have created.
           module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True,
-                           environment=pre_json_object, updated=True, component_triggering_update=component)
+                           environment_group=pre_json_object, updated=True, component_triggering_update=component)
       else:
         module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already present and in the desired state.')
 
@@ -206,7 +198,7 @@ def ensure_present(module):
       if module.check_mode:
         # Return success with the object that we would have created.
         module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.',
-                         check_mode=True, environment=pre_json_object)
+                         check_mode=True, environment_group=pre_json_object)
 
       # We will use a POST method to create the missing object.
       method = 'POST'
@@ -222,7 +214,7 @@ def ensure_present(module):
       if method == 'POST':
         actioned = 'created'
         msg = f'{module.object_title} {object_id} has been {actioned}.'
-        module.exit_json(changed=True, msg=msg, environment=object_resp_dict['data']['environment'])
+        module.exit_json(changed=True, msg=msg, environment_group=object_resp_dict['data']['envGroup'])
       if method == 'PUT':
         actioned = 'updated'
         msg = f'{module.object_title} {object_id} has been {actioned}.'
@@ -230,7 +222,7 @@ def ensure_present(module):
           'before': existing,
           'after': pre_json_object
         }
-        module.exit_json(changed=True, msg=msg, diff=diff, environment=object_resp_dict['data']['environment'], component_triggering_update=component)
+        module.exit_json(changed=True, msg=msg, diff=diff, environment_group=object_resp_dict['data']['envGroup'], component_triggering_update=component)
     else:
       # Try to extract the status_code to return with our failure.
       status_code = str(create_object_resp.status_code)
@@ -260,8 +252,18 @@ def ensure_absent(module):
       checked_and_absent = True
     elif harness_response.status_code == 200:
       checked_and_present = True
+    elif harness_response.status_code == 400:
+      harness_response_dict = loads(harness_response.text)
+      harness_response_code = harness_response_dict['code']
+      if harness_response_code == 'RESOURCE_NOT_FOUND_EXCEPTION':
+        checked_and_absent = True
+      else:
+        module.fail_json(msg=harness_response_code)
     else:
-      module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct.')
+      msg = []
+      msg.append('Harness response invalid or unexpected. Ensure your API Key is correct.')
+      msg.append('Status Code:', harness_response.status_code)
+      module.fail_json(msg=msg)
 
     if checked_and_absent:
       module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already absent.')
@@ -302,7 +304,6 @@ def main():
           state=dict(type='str', choices=['present', 'absent'], default='present'),
           api_key=dict(type='str'),
           account_id=dict(type='str'),
-          description=dict(type='str', aliases=['desc']),
           type=dict(type='str'),
           color=dict(type='str'),
           tags=dict(type='dict'),
@@ -310,13 +311,13 @@ def main():
       ),
       supports_check_mode = True,
       required_if = [
-        ('state', 'present', ('type',))
+        ('state', 'present', ('yaml',))
       ]
     )
 
     # Set the object type for this module.
-    module.object_type = 'environment'
-    module.object_title = module.object_type.title()
+    module.object_type = 'environmentGroup'
+    module.object_title = 'Environment Group'
 
     # Catch and fail when we were given an ID with a dash in it.
     object_id = module.params['identifier']
@@ -369,8 +370,8 @@ def main():
       module.object_scope = 'account'
 
     # Prepare the Harness API URLs for this module.
-    module.push_url = f'https://app.harness.io/ng/api/environmentsV2?accountIdentifier={module.account_id}'
-    module.read_url = f'https://app.harness.io/ng/api/environmentsV2/{object_id}?accountIdentifier={module.account_id}&deleted=false'
+    module.push_url = f'https://app.harness.io/ng/api/environmentGroup?accountIdentifier={module.account_id}'
+    module.read_url = f'https://app.harness.io/ng/api/environmentGroup/{object_id}?accountIdentifier={module.account_id}'
     if module.object_scope == 'org':
       module.read_url += f'&orgIdentifier={org_id}'
     elif module.object_scope == 'project':

@@ -354,7 +354,7 @@ def main():
       module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s'
     else:
       module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s/{object_id}'
-      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s'       
+      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s'
 
     # Run the appropriate function based on the state requested.
     state = module.params['state']
