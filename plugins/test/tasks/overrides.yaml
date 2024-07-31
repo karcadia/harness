@@ -1,0 +1,200 @@
+# Account
+    - name: Create account-level override (check)
+      karcadia.harness.override:
+        state: present
+        id: account_demo_account_environment
+        tags:
+          builtby: harness-iac
+        environment: account.demo_account_environment
+        type: ENV_GLOBAL_OVERRIDE
+        spec:
+          variables:
+            - name: var1
+              type: String
+              value: val1
+              description: description of override
+      check_mode: True
+      register: check_account_create_override
+
+    - name: debug check_account_create_override
+      debug:
+        var: check_account_create_override
+
+    - name: Create account-level override
+      karcadia.harness.override:
+        state: present
+        id: account_demo_account_environment
+        tags:
+          builtby: harness-iac
+        environment: account.demo_account_environment
+        type: ENV_GLOBAL_OVERRIDE
+        spec:
+          variables:
+            - name: var1
+              type: String
+              value: val1
+              description: description of override
+      register: create_account_override
+
+    - name: debug create_account_override
+      debug:
+        var: create_account_override
+
+    - name: Delete account-level override (check)
+      karcadia.harness.override:
+        state: absent
+        id: account_demo_account_environment
+      check_mode: True
+      register: check_account_delete_override
+
+    - name: debug check_account_delete_override
+      debug:
+        var: check_account_delete_override
+
+    - name: Delete account-level override
+      karcadia.harness.override:
+        state: absent
+        id: account_demo_account_environment
+      register: account_delete_override
+
+    - name: debug account_delete_override
+      debug:
+        var: account_delete_override
+
+# Org        
+    - name: Create org-level override (check)
+      karcadia.harness.override:
+        state: present
+        id: org_demo_org_environment
+        org: default
+        tags:
+          builtby: harness-iac
+        environment: org.demo_org_environment
+        type: ENV_GLOBAL_OVERRIDE
+        spec:
+          variables:
+            - name: var1
+              type: String
+              value: val1
+              description: description of override
+      check_mode: True
+      register: check_org_create_override
+
+    - name: debug check_org_create_override
+      debug:
+        var: check_org_create_override
+
+    - name: Create org-level override
+      karcadia.harness.override:
+        state: present
+        id: org_demo_org_environment
+        org: default
+        tags:
+          builtby: harness-iac
+        environment: org.demo_org_environment
+        type: ENV_GLOBAL_OVERRIDE
+        spec:
+          variables:
+            - name: var1
+              type: String
+              value: val1
+              description: description of override
+      register: create_org_override
+
+    - name: debug create_org_override
+      debug:
+        var: create_org_override
+
+    - name: Delete org-level override (check)
+      karcadia.harness.override:
+        state: absent
+        id: org_demo_org_environment
+        org: default
+      check_mode: True
+      register: check_org_delete_override
+
+    - name: debug check_org_delete_override
+      debug:
+        var: check_org_delete_override
+
+    - name: Delete org-level override
+      karcadia.harness.override:
+        state: absent
+        id: org_demo_org_environment
+        org: default
+      register: org_delete_override
+
+    - name: debug org_delete_override
+      debug:
+        var: org_delete_override
+
+# Project
+    - name: Create project-level override (check)
+      karcadia.harness.override:
+        state: present
+        id: demo_environment
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        environment: demo_environment
+        type: ENV_GLOBAL_OVERRIDE
+        spec:
+          variables:
+            - name: var1
+              type: String
+              value: val1
+              description: description of override
+      check_mode: True
+      register: check_project_create_override
+
+    - name: debug check_project_create_override
+      debug:
+        var: check_project_create_override
+
+    - name: Create project-level override
+      karcadia.harness.override:
+        state: present
+        id: demo_environment
+        org: default
+        project: demo_project
+        tags:
+          builtby: harness-iac
+        environment: demo_environment
+        type: ENV_GLOBAL_OVERRIDE
+        spec:
+          variables:
+            - name: var1
+              type: String
+              value: val1
+              description: description of override
+      register: create_project_override
+
+    - name: debug create_project_override
+      debug:
+        var: create_project_override
+
+    - name: Delete project-level override (check)
+      karcadia.harness.override:
+        state: absent
+        id: demo_environment
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_override
+
+    - name: debug check_project_delete_override
+      debug:
+        var: check_project_delete_override
+
+    - name: Delete project-level override
+      karcadia.harness.override:
+        state: absent
+        id: demo_environment
+        org: default
+        project: demo_project
+      register: project_delete_override
+
+    - name: debug project_delete_override
+      debug:
+        var: project_delete_override

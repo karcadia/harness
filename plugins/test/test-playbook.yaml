@@ -8,7 +8,8 @@
     pipelines: False
     services: False
     environments: True
-    env_groups: True
+    env_groups: False
+    overrides: True
     # Licensed features
     roles: False
   tasks:
@@ -97,6 +98,10 @@
     - name: Environment Groups
       include_tasks: tasks/env_groups.yaml
       when: env_groups
+
+    - name: Overrides
+      include_tasks: tasks/overrides.yaml
+      when: overrides
 
 ## Begin pipelines
 # Pipelines are project-level only.
