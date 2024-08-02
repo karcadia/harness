@@ -1,4 +1,31 @@
 # Account
+    - name: List account roles.
+      karcadia.harness.role_info:
+      register: account_role_list
+
+    - name: debug account_role_list
+      debug:
+        var: account_role_list
+
+    - name: List org roles.
+      karcadia.harness.role_info:
+        org: default
+      register: org_role_list
+
+    - name: debug org_role_list
+      debug:
+        var: org_role_list
+
+    - name: List project roles.
+      karcadia.harness.role_info:
+        org: default
+        project: demo_project
+      register: project_role_list
+
+    - name: debug project_role_list
+      debug:
+        var: project_role_list
+
     - name: Create account-level role (check)
       karcadia.harness.role:
         state: present
