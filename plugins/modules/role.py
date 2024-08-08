@@ -7,7 +7,7 @@
 DOCUMENTATION = r"""
 ---
 module: role
-version_added: 0.1.0
+version_added: 0.5.7
 short_description: Manage Harness Role
 description:
   - Manage Harness Roles.
@@ -44,10 +44,10 @@ options:
     description: A description to apply to the Harness Role.
     required: False
     type: str
-  spec:
+  permissions:
     description: 
     required: 
-    type: 
+    type: list
 """
 
 EXAMPLES = r"""
@@ -117,11 +117,11 @@ def ensure_present(module):
   object_name = module.params["name"]
   org_id      = module.params["org"]
   project_id  = module.params["project"]
-  spec        = module.params["spec"]
+  permissions = module.params["permissions"]
 
   # Ensure all required parameters for a create were provided.
-  if not spec:
-    module.fail_json(msg='The spec parameter must be provided when state is present.')
+  if not permissions:
+    module.fail_json(msg='The permissions parameter must be provided when state is present.')
 
   # Use the same name as ID if name was not provided.
   if not object_name:
@@ -138,46 +138,50 @@ def ensure_present(module):
   elif harness_response.status_code == 200:
     checked_and_present = True
   elif harness_response.status_code == 400:
-    module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct and you are licensed for this feature.')
+    harness_response_dict = loads(harness_response.text)
+    if 'Role not found' in harness_response_dict['message']:
+      checked_and_absent = True
+    else:
+      msg = 'Harness response invalid or unexpected. Ensure your API Key is correct and you are licensed for this feature.'
+      msg += harness_response.text
+      module.fail_json(msg=msg)
   else:
     module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct.')
 
   # Prepare the object with the required fields.
   pre_json_object = {
-    module.object_type: {
-      "identifier": object_id,
-      "name": object_name,
-      "spec": spec,
-    }
+    "identifier": object_id,
+    "name": object_name,
+    "permissions": permissions,
   }
 
   # Attach the org and project IDs as needed.
   if module.object_scope == 'project':
-    pre_json_object[module.object_type]['org'] = org_id
-    pre_json_object[module.object_type]['project'] = project_id
+    pre_json_object['org'] = org_id
+    pre_json_object['project'] = project_id
   elif module.object_scope == 'org':
-    pre_json_object[module.object_type]['org'] = org_id
+    pre_json_object['org'] = org_id
 
   # Add anything additional that was provided.
   if 'description' in module.params.keys():
-    pre_json_object[module.object_type]['description'] = module.params['description']
+    pre_json_object['description'] = module.params['description']
   if 'tags' in module.params.keys():
-    pre_json_object[module.object_type]['tags'] = module.params['tags']
+    pre_json_object['tags'] = module.params['tags']
 
   if checked_and_present:
     # Determine if the existing object needs to be updated.
     existing = loads(harness_response.text)
     needs_update = False
-    if pre_json_object[module.object_type]['description'] and pre_json_object[module.object_type]['description'] != existing['description']:
+    if pre_json_object['description'] and pre_json_object['description'] != existing['description']:
       needs_update = True
       component = 'description'
-    if pre_json_object[module.object_type]['tags'] and pre_json_object[module.object_type]['tags'] != existing['tags']:
+    if pre_json_object['tags'] and pre_json_object['tags'] != existing['tags']:
       needs_update = True
       component = 'tags'
-    if pre_json_object[module.object_type]['spec'] != existing['spec']:
+    if pre_json_object['permissions'] != existing['permissions']:
       needs_update = True
-      component = 'spec'
-    if pre_json_object[module.object_type]['name'] != existing['name']:
+      component = 'permissions'
+    if pre_json_object['name'] != existing['name']:
       needs_update = True
       component = 'name'
     
@@ -187,14 +191,14 @@ def ensure_present(module):
       url = module.read_url
       if module.check_mode:
         # Return success with the object that we would have created.
-        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True, role=pre_json_object[module.object_type], updated=True, component_triggering_update=component)
+        module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.', check_mode=True, role=pre_json_object, updated=True, component_triggering_update=component)
     else:
       module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already present and in the desired state.')
 
   if checked_and_absent:
     if module.check_mode:
       # Return success with the object that we would have created.
-      module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.', check_mode=True, role=pre_json_object[module.object_type])
+      module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.', check_mode=True, role=pre_json_object)
 
     # We will use a POST method to create the missing object.
     method = 'POST'
@@ -213,7 +217,7 @@ def ensure_present(module):
     actioned = 'created'
     # Extract the object returned from the Harness API and return it with our successful module exit.
     object_resp_dict = loads(create_object_resp.text)
-    object_resp = object_resp_dict[module.object_type]
+    object_resp = object_resp_dict
     module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', role=object_resp)
   else:
     # Try to extract the status_code to return with our failure.
@@ -289,8 +293,8 @@ def main():
           api_key=dict(type='str', required=False),
           account_id=dict(type='str', required=False),
           description=dict(type='str', required=False, aliases=['desc']),
-          spec=dict(type='dict', required=False),
-          tags=dict(required=False)
+          permissions=dict(type='list', required=False),
+          tags=dict(type='dict', required=False)
       ),
       supports_check_mode = True
     )
