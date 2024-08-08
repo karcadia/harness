@@ -173,6 +173,7 @@ def ensure_present(module):
       # Determine if the existing object needs to be updated.
       existing = loads(harness_response.text)['data']
       needs_update = False
+      # Sanitize the spec object before comparing.
       if pre_json_object['spec']:
         if 'variables' in pre_json_object['spec'].keys():
           for var_iter in pre_json_object['spec']['variables']:
@@ -184,10 +185,37 @@ def ensure_present(module):
               var_iter['required'] = False
         else:
           pre_json_object['spec']['variables'] = []
-        if 'configFiles' in pre_json_object['spec'].keys() and not pre_json_object['spec']['configFiles']:
-          del pre_json_object['spec']['configFiles']
-        if 'manifests' in pre_json_object['spec'].keys() and not pre_json_object['spec']['manifests']:
-          del pre_json_object['spec']['manifests']
+        if 'configFiles' in pre_json_object['spec'].keys():
+          if pre_json_object['spec']['configFiles']:
+            for config_file_iter in pre_json_object['spec']['configFiles']:
+              if 'configFile' in config_file_iter.keys():
+                if 'spec' in config_file_iter['configFile'].keys():
+                  if 'store' in config_file_iter['configFile']['spec'].keys():
+                    if 'metadata' not in config_file_iter['configFile']['spec']['store'].keys():
+                      config_file_iter['configFile']['spec']['store']['metadata'] = None
+                    if 'spec' in config_file_iter['configFile']['spec']['store'].keys():
+                      if 'files' not in config_file_iter['configFile']['spec']['store']['spec'].keys():
+                        config_file_iter['configFile']['spec']['store']['spec']['files'] = None
+          else:
+            del pre_json_object['spec']['configFiles']
+        if 'manifests' in pre_json_object['spec'].keys():
+          if pre_json_object['spec']['manifests']:
+            for manifest_iter in pre_json_object['spec']['manifests']:
+              if 'manifest' in manifest_iter.keys():
+                if 'spec' in manifest_iter['manifest'].keys():
+                  if 'metadata' not in manifest_iter['manifest']['spec'].keys():
+                    manifest_iter['manifest']['spec']['metadata'] = None
+                  if 'store' in manifest_iter['manifest']['spec'].keys():
+                    if 'metadata' not in manifest_iter['manifest']['spec']['store'].keys():
+                      manifest_iter['manifest']['spec']['store']['metadata'] = None
+                    if 'spec' in manifest_iter['manifest']['spec']['store'].keys():
+                      if 'commitId' not in manifest_iter['manifest']['spec']['store']['spec'].keys():
+                        manifest_iter['manifest']['spec']['store']['spec']['commitId'] = None
+                      if 'folderPath' not in manifest_iter['manifest']['spec']['store']['spec'].keys():
+                        manifest_iter['manifest']['spec']['store']['spec']['folderPath'] = None
+          else:
+            del pre_json_object['spec']['manifests']
+
         if pre_json_object['spec'] != existing['spec']:
           needs_update = True
           component = 'spec'
@@ -308,7 +336,6 @@ def main():
       argument_spec = dict(
           name=dict(type='str'),
           identifier=dict(type='str', required=True, aliases=['id', 'override_id' ]),
-          #identifier=dict(type='str', required=True, aliases=['id', 'override_id', 'environment', 'env', 'env_id', 'env_ref', 'environment_ref', 'environmentRef']),
           org=dict(type='str', aliases=['org_id']),
           project=dict(type='str', aliases=['project_id']),
           state=dict(type='str', choices=['present', 'absent'], default='present'),
