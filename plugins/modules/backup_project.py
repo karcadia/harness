@@ -63,7 +63,7 @@ from os import getenv, mkdir
 from os.path import isdir
 from shutil import rmtree
 from json import dumps, loads
-from yaml import dump
+from yaml import safe_load, dump
 from uuid import uuid4
 from tarfile import open as tar_open
 
@@ -112,6 +112,7 @@ def backup_object(module):
     # environments
     # environment groups
     # infrastructure definitions
+    # overrides
     # connectors
     # delegates
     # secrets
@@ -134,7 +135,7 @@ def backup_object(module):
     # Gather the files and details for all of the object types.
     fetch_services(module, org_id, object_id)
     fetch_environments(module, org_id, object_id)
-    # Infrastructures get fetched from within fetch_environments.
+    # Infrastructures and overrides get fetched from within fetch_environments.
     fetch_environment_groups(module, org_id, object_id)
     fetch_connectors(module, org_id, object_id)
     fetch_delegates(module, org_id, object_id)
@@ -235,6 +236,8 @@ def fetch_environments(module, org_id, project_id):
     mkdir(module.work_dir + '/environments/' + env_id)
     # Each infra has to fetched at the environment level.
     fetch_infras(module, org_id, project_id, env_id)
+    # Each override has to be fetched at the environment level.
+    fetch_overrides(module, org_id, project_id, env_id)
     env_filename = module.work_dir + '/environments/' + env_id + '/' + env_id + '.yaml'
     with open(env_filename, 'w') as file_writer:
       file_writer.write(env['yaml'])
@@ -319,6 +322,73 @@ def fetch_infras(module, org_id, project_id, env_id):
     infra_filename = module.work_dir + '/environments/' + env_id + '/infrastructures/' + infra_id + '/' + infra_id + '.yaml'
     with open(infra_filename, 'w') as file_writer:
       file_writer.write(infra['yaml'])
+
+def fetch_overrides(module, org_id, project_id, env_id):
+  # Fetch overrides for project.
+  page = 0
+  page_limit = 20
+  account_id = module.headers['Harness-Account']
+  url = f'https://app.harness.io/ng/api/environmentsV2/serviceOverrides?page={page}&size={page_limit}&accountIdentifier={account_id}'
+  url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}&environmentIdentifier={env_id}&sort=name'
+  override_list_resp = request("GET", url, headers=module.headers)
+
+  # Interpret the API response.
+  if override_list_resp.status_code == 200:
+    # Check if we got all the items on the first call.
+    override_list = loads(override_list_resp.text)['data']['content']
+    resp_headers = override_list_resp.headers
+    while 'Content-Length' not in resp_headers.keys():
+      # Keep calling until we have everything.
+      page += 1
+      url = f'https://app.harness.io/ng/api/environmentsV2/serviceOverrides?page={page}&size={page_limit}&accountIdentifier={account_id}'
+      url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}&environmentIdentifier={env_id}&sort=name'
+      override_list_resp = request("GET", url, headers=module.headers)
+      override_list.extend(loads(override_list_resp.text)['data']['content'])
+      resp_headers = override_list_resp.headers
+  else:
+    # Try to extract the status_code to return with our failure.
+    status_code = str(override_list_resp.status_code)
+    msg=[]
+    msg.append(f'Harness Override List Response was unexpected. Status Code: {status_code}')
+    msg.append(f'{override_list_resp.text}')
+    module.fail_json(msg=msg)
+
+  # Now that we have all of our overrides, write them out to files in our workdir.
+  for override in override_list:
+    override_id = override['environmentRef'] + '_' + override['serviceRef']
+    if not isdir(module.work_dir + '/environments/' + env_id):
+      mkdir(module.work_dir + '/environments/' + env_id)
+    if not isdir(module.work_dir + '/environments/' + env_id + '/overrides'):
+      mkdir(module.work_dir + '/environments/' + env_id + '/overrides/')
+    override_filename = module.work_dir + '/environments/' + env_id + '/overrides/' + override_id + '.yaml'
+    if override['yaml']:
+      module.fail_json(msg='Harness API behavior has changed. This module needs to be updated.')
+      with open(override_filename, 'w') as file_writer:
+        file_writer.write(override['yaml'])
+    else:
+      override_content = fetch_override(module, override_id, org_id, project_id, env_id)
+      override_content['yaml'] = safe_load(override_content['yaml'])
+      with open(override_filename, 'w') as file_writer:
+        file_writer.write(dump(override_content))
+
+def fetch_override(module, override_id, org_id, project_id, env_id):
+  # Fetch detail for specific override for project.
+  account_id = module.headers['Harness-Account']
+  url = f'https://app.harness.io/ng/api/serviceOverrides/{override_id}?accountIdentifier={account_id}'
+  url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}'
+  override_resp = request("GET", url, headers=module.headers)
+
+  # Interpret the API response.
+  if override_resp.status_code == 200:
+    override = loads(override_resp.text)['data']
+    return override
+  else:
+    # Try to extract the status_code to return with our failure.
+    status_code = str(override_resp.status_code)
+    msg=[]
+    msg.append(f'Harness Override List Response was unexpected. Status Code: {status_code}')
+    msg.append(f'{override_resp.text}')
+    module.fail_json(msg=msg)
 
 def fetch_connectors(module, org_id, project_id):
   # Fetch connectors for project.
