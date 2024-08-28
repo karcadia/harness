@@ -366,12 +366,19 @@ def fetch_overrides(module, org_id, project_id, env_id):
       with open(override_filename, 'w') as file_writer:
         file_writer.write(override['yaml'])
     else:
-      override_content = fetch_override(module, override_id, org_id, project_id, env_id)
+      override_content = fetch_override(module, override_id, org_id, project_id)
       override_content['yaml'] = safe_load(override_content['yaml'])
       with open(override_filename, 'w') as file_writer:
         file_writer.write(dump(override_content))
 
-def fetch_override(module, override_id, org_id, project_id, env_id):
+    # We also need to pull an override for the environment name, separate from the service overrides.
+    env_override_content = fetch_override(module, env_id, org_id, project_id)
+    del env_override_content['yaml']
+    env_override_filename = module.work_dir + '/environments/' + env_id + '/overrides/' + env_id + '.yaml'
+    with open(env_override_filename, 'w') as file_writer:
+      file_writer.write(dump(env_override_content))
+
+def fetch_override(module, override_id, org_id, project_id):
   # Fetch detail for specific override for project.
   account_id = module.headers['Harness-Account']
   url = f'https://app.harness.io/ng/api/serviceOverrides/{override_id}?accountIdentifier={account_id}'
