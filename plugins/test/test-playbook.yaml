@@ -7,9 +7,10 @@
     templates: False
     pipelines: False
     services: False
-    environments: True
+    environments: False
     env_groups: False
-    overrides: True
+    overrides: False
+    variables: True
     # Licensed features
     roles: False
   tasks:
@@ -102,6 +103,10 @@
     - name: Overrides
       include_tasks: tasks/overrides.yaml
       when: overrides
+
+    - name: Variables
+      include_tasks: tasks/variables.yaml
+      when: variables
 
 ## Begin pipelines
 # Pipelines are project-level only.

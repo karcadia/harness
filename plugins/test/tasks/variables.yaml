@@ -1,0 +1,170 @@
+# Account
+    - name: Create account-level variable (check)
+      karcadia.harness.variable:
+        state: present
+        id: account_demo_variable
+        type: String
+        description: 'description for demo variable'
+        spec:
+          valueType: FIXED
+          fixedValue: test_value
+      check_mode: True
+      register: check_account_create_variable
+
+    - name: debug check_account_create_variable
+      debug:
+        var: check_account_create_variable
+
+    - name: Create account-level variable
+      karcadia.harness.variable:
+        state: present
+        id: account_demo_variable
+        type: String
+        description: 'description for demo variable'
+        spec:
+          valueType: FIXED
+          fixedValue: test_value
+      register: create_account_variable
+
+    - name: debug create_account_variable
+      debug:
+        var: create_account_variable
+
+    - name: Delete account-level variable (check)
+      karcadia.harness.variable:
+        state: absent
+        id: account_demo_variable
+      check_mode: True
+      register: check_account_delete_variable
+
+    - name: debug check_account_delete_variable
+      debug:
+        var: check_account_delete_variable
+
+    - name: Delete account-level variable
+      karcadia.harness.variable:
+        state: absent
+        id: account_demo_variable
+      register: account_delete_variable
+
+    - name: debug account_delete_variable
+      debug:
+        var: account_delete_variable
+
+# Org        
+    - name: Create org-level variable (check)
+      karcadia.harness.variable:
+        state: present
+        id: org_demo_variable
+        org: default
+        type: String
+        description: 'description for demo variable'
+        spec:
+          valueType: FIXED
+          fixedValue: test_value
+      check_mode: True
+      register: check_org_create_variable
+
+    - name: debug check_org_create_variable
+      debug:
+        var: check_org_create_variable
+
+    - name: Create org-level variable
+      karcadia.harness.variable:
+        state: present
+        id: org_demo_variable
+        org: default
+        type: String
+        description: 'description for demo variable'
+        spec:
+          valueType: FIXED
+          fixedValue: test_value
+      register: create_org_variable
+
+    - name: debug create_org_variable
+      debug:
+        var: create_org_variable
+
+    - name: Delete org-level variable (check)
+      karcadia.harness.variable:
+        state: absent
+        id: org_demo_variable
+        org: default
+      check_mode: True
+      register: check_org_delete_variable
+
+    - name: debug check_org_delete_variable
+      debug:
+        var: check_org_delete_variable
+
+    - name: Delete org-level variable
+      karcadia.harness.variable:
+        state: absent
+        id: org_demo_variable
+        org: default
+      register: org_delete_variable
+
+    - name: debug org_delete_variable
+      debug:
+        var: org_delete_variable
+
+# Project
+    - name: Create project-level variable (check)
+      karcadia.harness.variable:
+        state: present
+        id: project_demo_variable
+        org: default
+        project: demo_project
+        type: String
+        description: 'description for demo variable'
+        spec:
+          valueType: FIXED
+          fixedValue: test_value
+      check_mode: True
+      register: check_project_create_variable
+
+    - name: debug check_project_create_variable
+      debug:
+        var: check_project_create_variable
+
+    - name: Create project-level variable
+      karcadia.harness.variable:
+        state: present
+        id: project_demo_variable
+        org: default
+        project: demo_project
+        type: String
+        description: 'description for demo variable'
+        spec:
+          valueType: FIXED
+          fixedValue: test_value
+      register: create_project_variable
+
+    - name: debug create_project_variable
+      debug:
+        var: create_project_variable
+
+    - name: Delete project-level variable (check)
+      karcadia.harness.variable:
+        state: absent
+        id: project_demo_variable
+        org: default
+        project: demo_project
+      check_mode: True
+      register: check_project_delete_variable
+
+    - name: debug check_project_delete_variable
+      debug:
+        var: check_project_delete_variable
+
+    - name: Delete project-level variable
+      karcadia.harness.variable:
+        state: absent
+        id: project_demo_variable
+        org: default
+        project: demo_project
+      register: project_delete_variable
+
+    - name: debug project_delete_variable
+      debug:
+        var: project_delete_variable
