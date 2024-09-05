@@ -6,91 +6,111 @@
 
 DOCUMENTATION = r"""
 ---
-module: variable
-version_added: 0.7.3
-short_description: Manage Harness Variable
+module: resource_group
+version_added: 0.7.4
+short_description: Manage Harness Resource Group
 description:
-  - Manage Harness Variables.
+  - Manage Harness Resource Groups.
 author:
   - Justin McCormick (@karcadia)
 options:
   identifier:
-    description: Identifier of the Harness Variable.
+    description: Identifier of the Harness Resource Group.
     required: True
     type: str
   org:
-    description: Identifier of the Harness Organization to which the Variable will belong.
+    description: Identifier of the Harness Organization to which the Resource Group will belong.
     required: False
     type: str
   project:
-    description: Identifier of the Harness Project to which the Variable will belong.
+    description: Identifier of the Harness Project to which the Resource Group will belong.
     required: False
     type: str
   state:
-    description: Desired state of the Harness Variable.
+    description: Desired state of the Harness Resource Group.
     choices:
       - absent
       - present
     default: present
     type: str
   name:
-    description: Name of the Harness Variable.
+    description: Name of the Harness Resource Group.
     required: False
     type: str
+  tags:
+    description: A dictionary of tags to add the Harness Resource Group.
+    type: dict
   description:
-    description: A description to apply to the Harness Variable.
+    description: A description to apply to the Harness Resource Group.
     required: False
     type: str
-  spec:
-    description: 
-    required: 
-    type: 
+  color:
+    description: The hex color code to use for the Harness Resource Group.
+    required: False
+    type: str
+  included_scope:
+    description: Included scopes for the resources belonging to the Harness Resource Group.
+    required: False
+    type: list
+  resource_filter:
+    description: Specifies the actual resources present in the Harness Resource Group.
+    required: False
+    type: list
+  include_all_resources:
+    description: Boolean value for including all resources in the Harness Resource Group.
+    required: False
+    type: bool
 """
 
 EXAMPLES = r"""
 # Note: These examples do not set authentication details.
 
-- name: Create a Harness Variable.
-  karcadia.harness.variable:
-    identifier: demo_variable
+- name: Create a Harness Resource Group.
+  karcadia.harness.resource_group:
+    identifier: demo_resource_group
     org: my_demo_org
 
-- name: Create a Harness Variable.
-  karcadia.harness.variable:
-    identifier: my_demo_variable
+- name: Create a Harness Resource Group.
+  karcadia.harness.resource_group:
+    identifier: my_demo_resource_group
     org: my_demo_org
-    name: my-demo-variable
-    description: The Variable used for a Demo.
+    name: my-demo-resource-group
+    description: The Resource Group used for a Demo.
     state: present
+    tags:
+      purpose: demo
 
-- name: Delete a Harness Variable.
-  karcadia.harness.variable:
-    identifier: demo_variable
+- name: Delete a Harness Resource Group.
+  karcadia.harness.resource_group:
+    identifier: demo_resource_group
     org: my_demo_org
     state: absent
 """
 
 RETURN = r"""
-variable:
-  description: The variable structure that was created.
+resource_group:
+  description: The resource group structure that was created.
   returned: when state is present
   type: dict
   suboptions:
     description:
-      description: The description applied to the Harness Variable.
+      description: The description applied to the Harness Resource Group.
       type: str
     identifier:
-      description: Identifier of the Harness Variable.
+      description: Identifier of the Harness Resource Group.
       type: str
     name:
-      description: Name of the Harness Variable.
+      description: Name of the Harness Resource Group.
       type: str
     org:
-      description: Identifier of the Harness Organization to which the Variable belongs.
+      description: Identifier of the Harness Organization to which the Resource Group belongs.
       type: str
     project:
-      description: Identifier of the Harness Project to which the Variable belongs.
+      description: Identifier of the Harness Project to which the Resource Group belongs.
       type: str
+    tags:
+      description: A dictionary of tags attached to the Harness Resource Group.
+      type: dict
 """
 
 # Internal Imports
@@ -109,12 +129,6 @@ def ensure_present(module):
     object_name = module.params["name"]
     org_id      = module.params["org"]
     project_id  = module.params["project"]
-    var_type    = module.params["type"]
-    spec        = module.params["spec"]
-
-    # Ensure all required parameters for a create were provided.
-    if not spec:
-      module.fail_json(msg='The spec parameter must be provided when state is present.')
 
     # Use the same name as ID if name was not provided.
     if not object_name:
@@ -141,53 +155,62 @@ def ensure_present(module):
 
     # Prepare the object with the required fields.
     pre_json_object = {
-      module.object_type: {
-        "identifier": object_id,
-        "name": object_name,
-        "type": var_type,
-        "spec": spec,
-      }
+      "identifier": object_id,
+      "name": object_name,
     }
+    pjso = pre_json_object
 
     # Attach the org and project IDs as needed.
     if module.object_scope == 'project':
-      pre_json_object[module.object_type]['orgIdentifier'] = org_id
-      pre_json_object[module.object_type]['projectIdentifier'] = project_id
+      pjso['orgIdentifier'] = org_id
+      pjso['projectIdentifier'] = project_id
     elif module.object_scope == 'org':
-      pre_json_object[module.object_type]['orgIdentifier'] = org_id
+      pjso['orgIdentifier'] = org_id
 
     # Add anything additional that was provided.
     if 'description' in module.params.keys():
-      pre_json_object[module.object_type]['description'] = module.params['description']
+      pjso['description'] = module.params['description']
+    if 'color' in module.params.keys():
+      pjso['color'] = module.params['color']
+    if 'tags' in module.params.keys():
+      pjso['tags'] = module.params['tags']
+    if 'included_scope' in module.params.keys():
+      pjso['included_scope'] = module.params['included_scope']
+    if 'resource_filter' in module.params.keys():
+      pjso['resource_filter'] = module.params['resource_filter']
+    if 'include_all_resources' in module.params.keys():
+      pjso['include_all_resources'] = module.params['include_all_resources']
 
     if checked_and_present:
       # Determine if the existing object needs to be updated.
-      existing = loads(harness_response.text)['data']
+      existing = loads(harness_response.text)
       needs_update = False
-      if pre_json_object[module.object_type]['description'] and pre_json_object[module.object_type]['description'] != existing[module.object_type]['description']:
+      if pjso['description'] and pjso['description'] != existing['description']:
         needs_update = True
         component = 'description'
-      if pre_json_object[module.object_type]['type'] and pre_json_object[module.object_type]['type'] != existing[module.object_type]['type']:
+      if pjso['included_scope'] and pjso['included_scope'] != existing['included_scope']:
         needs_update = True
-        component = 'type'
-      if pre_json_object[module.object_type]['name'] != existing[module.object_type]['name']:
+        component = 'included_scope'
+      if pjso['resource_filter'] and pjso['resource_filter'] != existing['resource_filter']:
+        needs_update = True
+        component = 'resource_filter'
+      if pjso['include_all_resources'] and pjso['include_all_resources'] != existing['include_all_resources']:
+        needs_update = True
+        component = 'include_all_resources'
+      if pjso['color'] and pjso['color'] != existing['color']:
+        needs_update = True
+        component = 'color'
+      if pjso['tags'] and pjso['tags'] != existing['tags']:
+        needs_update = True
+        component = 'tags'
+      if pjso['name'] != existing['name']:
         needs_update = True
         component = 'name'
-      # Sanitize spec before checking if it needs an update.
-      del existing[module.object_type]['spec']['allowedValues']
-      del existing[module.object_type]['spec']['defaultValue']
-      del existing[module.object_type]['spec']['value']
-      del existing['createdAt']
-      del existing['lastModifiedAt']
-      user_provided_spec = pre_json_object[module.object_type]['spec']
-      if user_provided_spec != existing[module.object_type]['spec']:
-        needs_update = True
-        component = 'spec'
       
       # Stop here if no updates are needed. Otherwise we'll use a PUT method to update the existing object.
       if needs_update:
         method = 'PUT'
-        url = module.push_url
+        url = module.read_url
         if module.check_mode:
           # Return success with the object that we would have created.
           diff = {
@@ -195,7 +218,7 @@ def ensure_present(module):
             'after': pre_json_object
           }
           module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been updated.',
-                           check_mode=True, variable=pre_json_object, updated=True, component_triggering_update=component, diff=diff)
+                           check_mode=True, resource_group=pre_json_object, updated=True, component_triggering_update=component, diff=diff)
       else:
         module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already present and in the desired state.')
 
@@ -203,7 +226,7 @@ def ensure_present(module):
       if module.check_mode:
         # Return success with the object that we would have created.
         module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been created.',
-                         check_mode=True, variable=pre_json_object[module.object_type])
+                         check_mode=True, resource_group=pre_json_object[module.object_type])
 
       # We will use a POST method to create the missing object.
       method = 'POST'
@@ -222,13 +245,13 @@ def ensure_present(module):
       # Extract the object returned from the Harness API and return it with our successful module exit.
       object_resp_dict = loads(create_object_resp.text)
       module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.',
-                       variable=object_resp_dict, updated=True, component_triggering_update=component, diff=diff)
+                       resource_group=object_resp_dict, updated=True, component_triggering_update=component, diff=diff)
     if method == 'POST':
       actioned = 'created'
       # Extract the object returned from the Harness API and return it with our successful module exit.
       object_resp_dict = loads(create_object_resp.text)['data']
       object_resp = object_resp_dict[module.object_type]
-      module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', variable=object_resp)
+      module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', resource_group=object_resp)
     else:
       # Try to extract the status_code to return with our failure.
       status_code = str(create_object_resp.status_code)
@@ -300,21 +323,24 @@ def main():
     module = AnsibleModule(
       argument_spec = dict(
           name=dict(type='str', required=False),
-          identifier=dict(type='str', required=True, aliases=['id', 'variable_id']),
+          identifier=dict(type='str', required=True, aliases=['id', 'resource_group_id']),
           org=dict(type='str', required=False, aliases=['org_id']),
           project=dict(type='str', required=False, aliases=['project_id']),
           state=dict(type='str', required=False, choices=['present', 'absent'], default='present'),
           api_key=dict(type='str', required=False),
           account_id=dict(type='str', required=False),
           description=dict(type='str', required=False, aliases=['desc']),
-          spec=dict(type='dict', required=False),
-          type=dict(type='str', required=False),
+          color=dict(type='str', required=False),
+          tags=dict(type='dict', required=False),
+          included_scope=dict(type='list', required=False),
+          resource_filter=dict(type='list', required=False),
+          include_all_resources=dict(type='bool', required=False),
       ),
       supports_check_mode = True
     )
 
     # Set the object type for this module.
-    module.object_type = 'variable'
+    module.object_type = 'resource-group'
     module.object_title = module.object_type.title()
 
     # Catch and fail when we were given an ID with a dash in it.
@@ -329,8 +355,6 @@ def main():
       module.fail_json(msg='Harness Identifiers may not contain dashes.')
     if project_id and not org_id:
       module.fail_json(msg='Org ID must be provided when project is provided.')
-    if module.params['state'] == 'present' and not module.params['type']:
-      module.fail_json(msg='Variable type must be provided when state is present.')
 
     # Pull the environment variables if they were provided.
     env_harness_api_key = getenv('HARNESS_API_KEY')
@@ -370,12 +394,15 @@ def main():
       module.object_scope = 'account'
 
     # Prepare the Harness API URLs for this module.
-    module.read_url = f'https://app.harness.io/ng/api/{module.object_type}s/{object_id}?accountIdentifier={module.account_id}'
-    module.push_url = f'https://app.harness.io/ng/api/{module.object_type}s?accountIdentifier={module.account_id}'
-    if module.object_scope == 'org':
-      module.read_url += f'&orgIdentifier={org_id}'
+    if module.object_scope == 'account':
+      module.read_url = f'https://app.harness.io/v1/{module.object_type}s/{object_id}'
+      module.push_url = f'https://app.harness.io/v1/{module.object_type}s'
+    elif module.object_scope == 'org':
+      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s/{object_id}'
+      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/{module.object_type}s'
     elif module.object_scope == 'project':
-      module.read_url += f'&orgIdentifier={org_id}&projectIdentifier={project_id}'
+      module.read_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s/{object_id}'
+      module.push_url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s'
 
     # Run the appropriate function based on the state requested.
     state = module.params['state']

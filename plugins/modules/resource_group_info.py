@@ -6,52 +6,52 @@
 
 DOCUMENTATION = r"""
 ---
-module: role_info
-version_added: 0.5.5
-short_description: Retrieve role information from Harness for the given scope.
+module: resource_group_info
+version_added: 0.7.4
+short_description: Retrieve resource group information from Harness for the given scope.
 description:
-  - Retrieve information for Harness Roles.
+  - Retrieve information for Harness Resource Groups.
   - Can be used at account, org, or project scope.
 author:
   - Justin McCormick (@karcadia)
 options:
   org:
-    description: Identifier of the Harness Organization from which the role list should be pulled.
+    description: Identifier of the Harness Organization from which the resource group list should be pulled.
     required: False
     type: str
   project:
-    description: Identifier of the Harness Project from which the role list should be pulled.
+    description: Identifier of the Harness Project from which the resource group list should be pulled.
     required: False
     type: str
 """
 
 EXAMPLES = r"""
-- name: List Harness account-level roles.
-  karcadia.harness.role_info:
+- name: List Harness account-level resource groups.
+  karcadia.harness.resource_group_info:
 
-- name: List Harness org-level roles.
-  karcadia.harness.role_info:
+- name: List Harness org-level resource groups.
+  karcadia.harness.resource_group_info:
     org: my_demo_org
 
-- name: List Harness project-level roles.
-  karcadia.harness.role_info:
-    org: my_demo_org
-    project: my_demo_project
-  register: role_list
-
-- name: List Harness project-level roles.
-  karcadia.harness.role_info:
+- name: List Harness project-level resource groups.
+  karcadia.harness.resource_group_info:
     org: my_demo_org
     project: my_demo_project
-  register: role_list
+  register: resource_group_list
+
+- name: List Harness project-level resource groups.
+  karcadia.harness.resource_group_info:
+    org: my_demo_org
+    project: my_demo_project
+  register: resource_group_list
   environment:
     HARNESS_ACCOUNT_ID: abc123
     HARNESS_API_KEY: abc123
 """
 
 RETURN = r"""
-roles:
-  description: List of roles found in scope.
+resource_groups:
+  description: List of resource groups found in scope.
   type: list
 """
 
@@ -66,8 +66,8 @@ from yaml import dump
 # External Imports
 from requests import request
 
-def fetch_roles(module, org_id, project_id):
-  # Fetch roles for given scope.
+def fetch_resource_groups(module, org_id, project_id):
+  # Fetch resource groups for given scope.
   page = 0
   page_limit = 20
   account_id = module.headers['Harness-Account']
@@ -75,13 +75,13 @@ def fetch_roles(module, org_id, project_id):
   url += f'&limit={page_limit}'
   url_without_page = url
   url += f'&page={page}'
-  role_list_resp = request("GET", url, headers=module.headers)
+  resource_group_resp = request("GET", url, headers=module.headers)
 
   # Interpret the API response.
-  if role_list_resp.status_code == 200:
+  if resource_group_resp.status_code == 200:
     # Check if we got all the items on the first call.
-    role_list = loads(role_list_resp.text)
-    resp_headers = role_list_resp.headers
+    resource_group_list = loads(resource_group_resp.text)
+    resp_headers = resource_group_resp.headers
     page_number = int(resp_headers['X-Page-Number'])
     items_so_far = (page_number + 1) * page_limit
     total_elements = int(resp_headers['X-Total-Elements'])
@@ -90,21 +90,21 @@ def fetch_roles(module, org_id, project_id):
       page += 1
       url = url_without_page
       url += f'&page={page}'
-      role_list_resp = request("GET", url, headers=module.headers)
-      role_list.extend(loads(role_list_resp.text))
-      resp_headers = role_list_resp.headers
+      resource_group_resp = request("GET", url, headers=module.headers)
+      resource_group_list.extend(loads(resource_group_resp.text))
+      resp_headers = resource_group_resp.headers
       page_number = int(resp_headers['X-Page-Number'])
       items_so_far = (page_number + 1) * page_limit
       total_elements = int(resp_headers['X-Total-Elements'])
   else:
     # Try to extract the status_code to return with our failure.
-    status_code = str(role_list_resp.status_code)
+    status_code = str(resource_group_resp.status_code)
     msg=[]
-    msg.append(f'Harness Role List Response was unexpected. Status Code: {status_code}')
-    msg.append(role_list_resp.text)
+    msg.append(f'Harness Resource Group List Response was unexpected. Status Code: {status_code}')
+    msg.append(resource_group_resp.text)
     module.fail_json(msg=msg)
 
-  module.exit_json(changed=False, roles=role_list)
+  module.exit_json(changed=False, resource_groups=resource_group_list)
 
 def main():
     # Initialize the module and specify the argument spec.
@@ -119,7 +119,7 @@ def main():
     )
 
     # Set the object type for this module.
-    module.object_type = 'role'
+    module.object_type = 'resource-group'
     module.object_title = module.object_type.title()
 
     # Catch and fail when we were given an ID with a dash in it.
@@ -176,7 +176,7 @@ def main():
       module.url = f'https://app.harness.io/v1/orgs/{org_id}/projects/{project_id}/{module.object_type}s?sort=identifier&order=ASC'
 
     # Call the backup function.
-    fetch_roles(module, org_id, project_id)
+    fetch_resource_groups(module, org_id, project_id)
 
 if __name__ == "__main__":
     main()
