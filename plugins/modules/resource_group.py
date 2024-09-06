@@ -146,7 +146,8 @@ def ensure_present(module):
       checked_and_present = True
     else:
       harness_resp_dict = loads(harness_response.text)
-      if harness_resp_dict['code'] == 'RESOURCE_NOT_FOUND_EXCEPTION':
+      if harness_resp_dict['code'] == 'RESOURCE_NOT_FOUND_EXCEPTION' \
+      or harness_resp_dict['message'] == 'Invalid request: Resource Group with given identifier not found.':
         checked_and_absent = True
       else:
         msg = 'Harness response invalid or unexpected. Ensure your API Key is correct.\n'
@@ -246,11 +247,10 @@ def ensure_present(module):
       object_resp_dict = loads(create_object_resp.text)
       module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.',
                        resource_group=object_resp_dict, updated=True, component_triggering_update=component, diff=diff)
-    if method == 'POST':
+    elif method == 'POST':
       actioned = 'created'
       # Extract the object returned from the Harness API and return it with our successful module exit.
-      object_resp_dict = loads(create_object_resp.text)['data']
-      object_resp = object_resp_dict[module.object_type]
+      object_resp = loads(create_object_resp.text)
       module.exit_json(changed=True, msg=f'{module.object_title} {object_id} has been {actioned}.', resource_group=object_resp)
     else:
       # Try to extract the status_code to return with our failure.
