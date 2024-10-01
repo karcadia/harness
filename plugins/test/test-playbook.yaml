@@ -10,7 +10,8 @@
     environments: False
     env_groups: False
     overrides: False
-    variables: True
+    variables: False
+    service_accounts: True
     # Licensed features
     roles: False
   tasks:
@@ -107,6 +108,10 @@
     - name: Variables
       include_tasks: tasks/variables.yaml
       when: variables
+
+    - name: Service Accounts
+      include_tasks: tasks/service_accounts.yaml
+      when: service_accounts
 
 ## Begin pipelines
 # Pipelines are project-level only.
