@@ -141,7 +141,10 @@ def ensure_present(module):
       else:
         module.fail_json(msg=harness_response_code)
     else:
-      module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct.')
+      msg = 'Harness response invalid or unexpected. Ensure your API Key is correct.'
+      msg += ' - ' + str(harness_response.status_code)
+      msg += ' - ' + str(harness_response.reason)
+      module.fail_json(msg=msg)
 
     # Prepare the object with the required fields.
     pre_json_object = {
@@ -260,8 +263,18 @@ def ensure_absent(module):
       checked_and_absent = True
     elif harness_response.status_code == 200:
       checked_and_present = True
+    elif harness_response.status_code == 400:
+      harness_response_dict = loads(harness_response.text)
+      harness_response_code = harness_response_dict['code']
+      if harness_response_code == 'RESOURCE_NOT_FOUND_EXCEPTION':
+        checked_and_absent = True
+      else:
+        module.fail_json(msg=harness_response_code)
     else:
-      module.fail_json(msg='Harness response invalid or unexpected. Ensure your API Key is correct.')
+      msg = 'Harness response invalid or unexpected. Ensure your API Key is correct.'
+      msg += ' - ' + str(harness_response.status_code)
+      msg += ' - ' + str(harness_response.reason)
+      module.fail_json(msg=msg)
 
     if checked_and_absent:
       module.exit_json(changed=False, msg=f'{module.object_title} {object_id} is already absent.')
